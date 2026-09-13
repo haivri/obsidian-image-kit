@@ -249,3 +249,54 @@ body.is-mobile .ik-edit-native { min-width: 44px; min-height: 44px; }
 .ik-toolbar-mobile .ik-sizes .ik-chip { min-width: 0; overflow-wrap: anywhere; line-height: 1.2; }
 .ik-toolbar-mobile .ik-width { min-height: 44px; width: 68px; font-size: 16px; }
 .ik-caption-input { width: 100%; min-height: 120px; resize: vertical; font-size: 16px; }
+
+/* Center within the space above the keyboard, including viewport panning on iOS. */
+.modal-container.ik-caption-modal-container {
+  position: fixed;
+  top: var(--ik-dialog-top, 0px);
+  left: var(--ik-dialog-left, 0px);
+  right: auto;
+  bottom: auto;
+  width: var(--ik-dialog-width, 100vw);
+  height: var(--ik-dialog-height, 100dvh);
+  min-height: 0;
+  box-sizing: border-box;
+  padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));
+  align-items: center;
+  justify-content: center;
+}
+
+.ik-caption-modal-container .modal.ik-caption-modal {
+  display: flex;
+  flex-direction: column;
+  width: min(100%, 480px);
+  min-width: 0;
+  min-height: 0;
+  max-width: 100%;
+  max-height: 100%;
+  margin: 0;
+  padding: 16px;
+  box-sizing: border-box;
+  transform: none;
+  overflow: hidden;
+}
+
+.ik-caption-modal .modal-header { flex: 0 0 auto; }
+.ik-caption-modal .modal-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+.ik-caption-modal .ik-caption-input {
+  display: block;
+  box-sizing: border-box;
+  height: 120px;
+  min-height: 44px;
+  resize: none;
+}
+.ik-caption-modal .ik-caption-footer { flex: 0 0 auto; padding-top: 12px; }
+.ik-caption-footer .setting-item { border: 0; padding: 0; }
+.ik-caption-footer .setting-item-info { display: none; }
+.ik-caption-footer .setting-item-control { width: 100%; justify-content: flex-end; gap: 12px; }
+.ik-caption-footer button { min-height: 44px; min-width: 80px; }

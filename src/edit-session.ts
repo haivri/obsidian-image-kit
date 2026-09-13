@@ -10,6 +10,7 @@ import { EMBED_SELECTOR, imageOf, isMobile, viewModeOf } from './dom';
 import { embedPathOf, ResolvedLink } from './resolver';
 import { writeLink } from './writer';
 import { isNoteLocked } from './lock';
+import { followVisibleViewport } from './modal-viewport';
 import { canUseDesktopActions, copyImage, openWithDefaultApp, revealInNavigation, showInSystemExplorer } from './file-actions';
 
 const REATTACH_TIMEOUT_MS = 400;
@@ -190,17 +191,24 @@ export class EditSession {
     if (this.compact) {
       const modal = new Modal(this.plugin.app);
       this.captionModal = modal;
+      modal.containerEl.addClass('ik-caption-modal-container');
+      modal.modalEl.addClass('ik-caption-modal');
       modal.setTitle('Edit caption');
       const input = modal.contentEl.createEl('textarea', { cls: 'ik-caption-input', attr: { 'aria-label': 'Caption', rows: '4' } });
       input.value = this.link.caption ?? '';
-      new Setting(modal.contentEl)
+      const footer = modal.modalEl.createDiv({ cls: 'ik-caption-footer' });
+      new Setting(footer)
         .addButton((b) => b.setButtonText('Cancel').onClick(() => modal.close()))
         .addButton((b) => b.setButtonText('Save').setCta().onClick(() => {
           const caption = input.value.trim();
           modal.close();
           void this.apply({ caption: caption || null });
         }));
-      modal.onClose = () => { this.captionModal = null; };
+      const stopFollowingViewport = followVisibleViewport(modal.containerEl);
+      modal.onClose = () => {
+        stopFollowingViewport();
+        this.captionModal = null;
+      };
       modal.open();
       input.focus();
       return;

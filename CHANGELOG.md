@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.2 - 2026-09-13
+
+- Keep the phone caption dialog above the keyboard using the visible viewport, including viewport panning and rotation.
+- Keep Cancel and Save in a fixed footer while the caption area scrolls on short screens.
+
 ## 0.1.1 - 2026-09-12
 
 - Add image layout editing beside native controls, with a steadier desktop toolbar and a touch-friendly phone panel.
