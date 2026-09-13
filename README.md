@@ -18,6 +18,8 @@ on desktop and mobile.
 - Reset size and alignment while keeping the caption.
 - Remove an image from the note while keeping its attachment.
 
+<a href="https://www.buymeacoffee.com/robertfleming"><img src="assets/buy-me-a-coffee.png" alt="Buy me a coffee" width="217"></a>
+
 In Live Preview, **Edit image** appears before Obsidian’s **Edit this block** button.
 The native zoom and resize controls remain available. The desktop toolbar stays aligned
 to the note column; phones get a compact bottom panel and a slide-up caption editor with Save and Cancel above the text field.

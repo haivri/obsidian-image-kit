@@ -4,7 +4,7 @@ Bug reports and pull requests are welcome.
 
 Before submitting a change:
 
-1. Run `npm ci`.
+1. Use Node.js 26 and run `npm ci`.
 2. Run `npm test`, `npm run lint`, and `npm run build`.
 3. Test both Reading view and Live Preview, on desktop and on a phone if you can.
 4. Walk the QA matrix below for anything you touched.

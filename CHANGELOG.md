@@ -1,8 +1,12 @@
 # Changelog
 
-## 0.1.6 - 2026-09-13
+## 0.1.7 - 2026-09-13
 
 - First public release, with desktop and iPhone screenshots and installation instructions.
+- Use Node 26 for CI and release builds to match the test dependencies. Image editing behavior is unchanged from 0.1.6.
+
+## 0.1.6 - 2026-09-13
+
 - Frame only the image during touch resizing, leaving its caption outside the selection outline. Mirror the bottom-right grip’s spacing to match the top-left corner.
 
 ## 0.1.5 - 2026-09-13

@@ -12,7 +12,7 @@ mobile editing, the mobile caption sheet, the finished layout, and a locked imag
 
 ## Install on a phone
 
-The primary vault includes **Plugin Showcase/Install Image Kit 0.1.6 on mobile**. Sync that
+The primary vault includes **Plugin Showcase/Install Image Kit 0.1.7 on mobile**. Sync that
 note to the phone, enable Templater, duplicate the installer note, and run **Templater:
 Replace templates in the active file** on the copy. It verifies the embedded runtime files,
 preserves settings, backs up existing files, and enables Image Kit. It requires Obsidian 1.13+.
@@ -25,7 +25,7 @@ For a public installation, use the release downloads or BRAT as described in the
 To regenerate it from a production build:
 
 ```sh
-node bootstrap/build-mobile-installer.mjs '/tmp/Install Image Kit 0.1.6 on mobile.md'
+node bootstrap/build-mobile-installer.mjs '/tmp/Install Image Kit 0.1.7 on mobile.md'
 ```
 
 A conventional runtime ZIP is also provided under **Plugin Showcase/Image Kit downloads**
