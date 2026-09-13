@@ -33,6 +33,12 @@ jobs:
             exit 1
           fi
 
+      - name: Test
+        run: npm test
+
+      - name: Lint
+        run: npm run lint
+
       - name: Build
         run: npm run build
 

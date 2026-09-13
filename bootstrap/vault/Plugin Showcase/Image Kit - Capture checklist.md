@@ -10,7 +10,7 @@ content. Keep the same Obsidian theme and zoom across desktop captures. Save ori
    Edit this block, the size presets, alignment, and caption in one clean frame. This is the README hero.
 2. **02-mobile-layout.png** — On a real phone, show the image and the complete bottom layout panel and both diagonal resize grips.
 3. **03-mobile-caption.png** — On a real phone, open the slide-up Caption panel with the keyboard visible and Save/Cancel above the text field.
-4. **04-fullscreen-caption.png** — Open the lotus in Fullscreen Image with the caption and zoom controls visible.
+4. **04-finished-layout.png** — Close the toolbar and show the centered lotus with its caption in the note.
 5. **05-locked-image.png** — Lock the showcase note using Page Lock; show its lock indicator and the image
    with viewing available and edit/resize controls absent. Unlock it after capture.
 

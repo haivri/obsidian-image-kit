@@ -4,6 +4,10 @@ Your everyday image workflow, in one place: choose a size, place the image, add 
 and get back to writing. Image Kit puts these controls beside Obsidian’s native image actions
 on desktop and mobile.
 
+<p align="center">
+  <img src="screenshots/01-desktop-layout.png" alt="Image Kit desktop toolbar with size presets, alignment, and caption controls above a centered image" width="900">
+</p>
+
 ## What you can do
 
 - Apply Small, Medium, Large, Original, or an exact width.
@@ -19,7 +23,15 @@ The native zoom and resize controls remain available. The desktop toolbar stays 
 to the note column; phones get a compact bottom panel and a slide-up caption editor with Save and Cancel above the text field.
 With **Page Lock**, locked images stay available to view while image editing is blocked.
 
-<!-- Add screenshots/01-desktop-layout.png and screenshots/02-mobile-layout.png after capture. -->
+## Made for touch, too
+
+Resize with the corner grips, choose an alignment, and tap Done. Captions open in a
+bottom sheet with Save and Cancel above the keyboard.
+
+<p align="center">
+  <img src="screenshots/02-mobile-layout.png" alt="Image Kit on iPhone with diagonal resize grips and a bottom panel for size, alignment, and captions" width="360">
+  <img src="screenshots/03-mobile-caption.png" alt="Caption editing on iPhone with Save and Cancel clearly above the open keyboard" width="360">
+</p>
 
 ## The complete image workflow
 
@@ -41,7 +53,17 @@ when enabled, or to Obsidian otherwise. Simple Gallery owns gallery editing.
 3. Select **Done** and continue writing.
 
 **More actions** includes file shortcuts, fullscreen viewing, Reset, and Remove image from note.
-Reading view uses a corner edit button where native image actions are unavailable.
+Reading view keeps captions and alignment visible, with image editing controls hidden.
+
+<details>
+<summary>See the finished layout and Page Lock integration</summary>
+
+<p align="center">
+  <img src="screenshots/04-finished-layout.png" alt="A centered image and caption in a note after closing the Image Kit toolbar" width="900">
+  <img src="screenshots/05-locked-image.png" alt="A note locked with Page Lock: image viewing remains available and editing controls are hidden" width="900">
+</p>
+
+</details>
 
 ## Your notes stay yours
 
@@ -61,20 +83,27 @@ It does not convert, compress, crop, rotate, or annotate images.
 
 ## Installation
 
-Requires **Obsidian 1.13 or newer**. This is currently a development preview; public release
-preparation is in progress.
+Requires **Obsidian 1.13 or newer**, on desktop or mobile.
 
-Copy `main.js`, `manifest.json`, and `styles.css` into `.obsidian/plugins/image-kit/`, then
-enable **Image Kit** in Community plugins. Existing settings are preserved by the vault publisher.
+Download `main.js`, `manifest.json`, and `styles.css` from the
+[latest release](https://github.com/haivri/obsidian-image-kit/releases/latest). Place them in
+`<vault>/.obsidian/plugins/image-kit/`, reload Obsidian, and enable **Image Kit** in
+**Settings → Community plugins**. Keep your existing `data.json` when updating.
 
-Captions are currently plain text. Numeric-only captions and reserved layout words are ambiguous
-in the current grammar. Rich captions, external-image and popout combinations, and physical-phone
-behavior still need broader validation before a public reliability claim.
+For mobile, you can also add `haivri/obsidian-image-kit` through
+[BRAT](https://github.com/TfTHacker/obsidian42-brat). Image Kit is not yet listed in
+Obsidian’s Community plugins directory.
+
+Captions are plain text. Avoid numeric-only captions and standalone layout keywords such as
+`center`, which the image-link syntax interprets as size or alignment. Local attachments are
+the primary supported workflow; external images in Reading view and popout windows have
+limited support.
 
 ## Screenshots and development
 
-The [showcase bootstrap and capture checklist](bootstrap/README.md) provide a clean demo note
-and the screenshots needed for the README. See [CONTRIBUTING.md](CONTRIBUTING.md) for testing.
+The [showcase bootstrap](bootstrap/README.md) provides the demo note and
+[photo credits](bootstrap/vault/Plugin%20Showcase/Image%20Kit%20-%20Photo%20credits.md).
+See [CONTRIBUTING.md](CONTRIBUTING.md) for testing.
 
 ```sh
 npm ci
