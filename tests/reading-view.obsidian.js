@@ -20,10 +20,11 @@
         const parent = embed.parentElement.getBoundingClientRect();
         const caption = embed.querySelector('.ik-caption');
         return { caption: caption?.textContent, captionVisible: !!caption && caption.getBoundingClientRect().height > 0,
+          editButtonAbsent: !embed.querySelector('.ik-edit-btn'),
           centered: Math.abs((rect.left + rect.right) / 2 - (parent.left + parent.right) / 2) < 2,
           width: rect.width, classes: embed.className };
       });
-      results.push({ mode, images, passed: images.length === 2 && images.every(image => image.captionVisible && image.centered) });
+      results.push({ mode, images, passed: images.length === 2 && images.every(image => image.captionVisible && image.centered && (mode !== 'preview' || image.editButtonAbsent)) });
     }
     return { passed: results.every(result => result.passed), results };
   } finally {

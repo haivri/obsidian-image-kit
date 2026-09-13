@@ -77,7 +77,7 @@
 body.is-mobile .markdown-source-view.mod-cm6 .image-embed.ik-embed > .embed-actions:has(.ik-edit-native) { opacity: 1; pointer-events: auto; }
 body.is-mobile .ik-edit-native { min-width: 44px; min-height: 44px; }
 
-/* Reading view and older Obsidian versions may not provide an action strip. */
+/* Older renderers may not provide an action strip in Live Preview. */
 .ik-edit-fallback {
   position: absolute;
   top: 6px;
@@ -262,7 +262,22 @@ body.is-mobile .ik-edit-native { min-width: 44px; min-height: 44px; }
 @media (prefers-reduced-motion: reduce) { .ik-caption-panel { animation: none; } }
 
 /* Large touch targets with small diagonal L-shaped grips. */
-.ik-resize-grip { position: fixed; z-index: 3; width: 48px; height: 48px; padding: 0; border: 0; background: transparent; box-shadow: none; touch-action: none; cursor: nwse-resize; }
+.ik-resize-grip { position: fixed; z-index: 3; width: 48px; height: 48px; padding: 0; touch-action: none; cursor: nwse-resize; }
+/* Override core button chrome, including its mobile-tap and hover states.
+   Only the L is visible; the full 48px square remains available to touch. */
+body button.ik-resize-grip,
+body button.ik-resize-grip:is(:hover, :active, :focus-visible, .mobile-tap) {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-tap-highlight-color: transparent;
+  outline: none;
+}
+.ik-resize-grip:focus-visible::after { outline: 2px solid var(--interactive-accent); outline-offset: 3px; }
 .ik-resize-grip::after { content: ''; position: absolute; width: 18px; height: 18px; top: 14px; left: 14px; border-color: var(--interactive-accent); border-style: solid; filter: drop-shadow(0 0 2px var(--background-primary)); }
 .ik-resize-grip-start::after { border-width: 4px 0 0 4px; }
 .ik-resize-grip-end::after { border-width: 0 4px 4px 0; }

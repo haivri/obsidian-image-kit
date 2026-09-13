@@ -39,7 +39,7 @@ test('adds the edit action between native actions without replacing their elemen
   assert.equal(embed.querySelector('.edit-block-button'), source);
 });
 
-test('upgrades a reading-view fallback when native controls become available', () => {
+test('upgrades a Live Preview fallback when native controls become available', () => {
   const embed = window.document.createElement('span');
   embed.className = 'image-embed';
   embed.setAttribute('src', 'photo.jpg');
@@ -54,6 +54,31 @@ test('upgrades a reading-view fallback when native controls become available', (
   decorate(embed, options);
   assert.equal(embed.querySelectorAll('.ik-edit-btn').length, 1);
   assert.ok(actions.firstElementChild.classList.contains('ik-edit-native'));
+});
+
+test('reading view removes editing controls while preserving captions, alignment, and native viewing', () => {
+  const root = window.document.createElement('div');
+  root.className = 'markdown-source-view';
+  root.innerHTML = '<span class="image-embed" src="photo.jpg" alt="A caption|center|240"><img><div class="embed-actions"><button aria-label="Zoom in"></button></div></span>';
+  window.document.body.append(root);
+  const embed = root.querySelector('.image-embed');
+  const zoom = embed.querySelector('[aria-label="Zoom in"]');
+  decorate(embed, options);
+  assert.ok(embed.querySelector('.ik-edit-btn'));
+  root.className = 'markdown-reading-view';
+  decorate(embed, options);
+  assert.equal(embed.querySelector('.ik-edit-btn'), null);
+  assert.equal(embed.querySelector('.ik-caption').textContent, 'A caption');
+  assert.ok(embed.classList.contains('ik-align-center'));
+  assert.equal(embed.querySelector('[aria-label="Zoom in"]'), zoom);
+  // Reading view without a native strip must not receive a fallback button.
+  embed.querySelector('.embed-actions').remove();
+  decorate(embed, options);
+  assert.equal(embed.querySelector('.ik-edit-btn'), null);
+  root.className = 'markdown-source-view';
+  decorate(embed, options);
+  assert.ok(embed.querySelector('.ik-edit-fallback'));
+  root.remove();
 });
 
 test('reading view decorates late-loaded images, repairs native replacements, and stops observing on unload', async () => {

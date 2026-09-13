@@ -7,7 +7,7 @@
 import { setIcon } from 'obsidian';
 import { embedPathOf } from './resolver';
 import { GrammarOptions, parseAltSegment } from './grammar';
-import { CONTAINER_ATTR, imageOf, isEditable } from './dom';
+import { CONTAINER_ATTR, imageOf, isEditable, viewModeOf } from './dom';
 
 export interface DecorateOptions {
   grammar: GrammarOptions;
@@ -28,7 +28,7 @@ export function decorate(container: HTMLElement, options: DecorateOptions): void
   const img = imageOf(container);
   if (!img) return;
   const alt = altOf(container);
-  const editable = isEditable(container);
+  const editable = isEditable(container) && viewModeOf(container) === 'live';
   const actions = container.querySelector<HTMLElement>(':scope > .embed-actions');
   const key = `2|${actions ? 'native' : 'fallback'}|${editable ? 'e' : 'r'}|${options.showCaptions ? 'c' : '-'}|${options.showEditButton ? 'b' : '-'}|${options.grammar.ignore?.join(',') ?? ''}|${alt}`;
   const path = embedPathOf(container) ?? img.src;
@@ -37,7 +37,7 @@ export function decorate(container: HTMLElement, options: DecorateOptions): void
   const caption = options.showCaptions ? layout.caption : undefined;
   const captionEl = container.querySelector(':scope > .ik-caption');
   const captionMatches = captionEl?.classList.contains('ik-caption-editing') || (caption ? captionEl?.textContent === caption : !captionEl);
-  const editMatches = !editable || !options.showEditButton || !!container.querySelector('.ik-edit-btn');
+  const editMatches = Boolean(container.querySelector('.ik-edit-btn')) === (editable && options.showEditButton);
   if (container.getAttribute(CONTAINER_ATTR) === key && captionMatches && editMatches) return;
   container.setAttribute(CONTAINER_ATTR, key);
 

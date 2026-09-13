@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.5 - 2026-09-13
+
+- Show only the L-shaped resize corners, removing the native button background and shadow while retaining 48-pixel touch targets and keyboard focus indicators.
+- Keep Image Kit’s edit button out of Reading view on mobile and desktop; captions, alignment, and native viewing controls remain available.
+
 ## 0.1.4 - 2026-09-13
 
 - Restore captions and alignment in Reading view by decorating native image placeholders after loading and re-rendering.
