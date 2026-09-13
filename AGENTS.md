@@ -1,0 +1,14 @@
+# Image Kit development
+
+- This directory is the authoritative source repository. Do not develop from the installed copy in an Obsidian vault.
+- `origin` is the private Forgejo repository; `github` is the public GitHub repository.
+- Keep `main` clean and release the exact same commit to both remotes.
+- Run `npm test`, `npm run lint`, and the production build before publishing.
+- Layout state lives only in the image link text (`![[a.jpg|Caption|center|400]]`). Never add a sidecar, cache, or per-vault data file for image layout.
+- Scope is deliberately narrow: size, alignment, captions, delegated fullscreen viewing, opt-in paste/drop with originals kept, and file actions. No conversion, compression, annotation, crop/rotate, batch processing, or galleries.
+- Preserve native image controls and gestures. Add Edit image before Edit this block in the native action strip. Delegate viewing to Fullscreen Image or Obsidian; do not maintain a second viewer or resize-handle implementation.
+- Rendering must not depend on any theme: stamp `ik-*` classes from JS and style them with core Obsidian variables only.
+- Publish through `/Users/robertfleming/vaults/obsidian-vault/_obsidian-os/scripts/release-obsidian-plugin image-kit`.
+- The publisher installs only runtime artifacts into the primary vault and preserves its existing `data.json` settings.
+- Never add a vault's `data.json` or other user-specific settings to this source repository.
+- `npm run publish:vault` builds and installs the runtime artifacts into the primary vault (`/Users/robertfleming/vaults/obsidian-vault`, overridable via `OBSIDIAN_VAULT`), preserving the vault's `data.json` and writing a `.release.json` provenance record. `npm run ship` does that and then pushes `origin`. Neither command touches the `github` remote — GitHub remains a deliberate, manual release push.

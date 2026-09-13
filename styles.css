@@ -1,0 +1,251 @@
+/* ---- embeds ------------------------------------------------------------- */
+
+.ik-embed {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
+  /* Core mobile styles use inline-flex: keep the caption below the image. */
+  flex-direction: column;
+}
+
+.ik-embed > .image-wrapper {
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.ik-embed.ik-align-center,
+.ik-embed.ik-align-right {
+  display: block;
+  width: fit-content;
+}
+
+.ik-embed.ik-align-center {
+  margin-inline: auto;
+}
+
+.ik-embed.ik-align-right {
+  margin-inline-start: auto;
+}
+
+.ik-embed.ik-align-wrap-left,
+.ik-embed.ik-align-wrap-right {
+  display: block;
+  width: fit-content;
+  max-width: 50%;
+}
+
+.ik-embed.ik-align-wrap-left {
+  float: left;
+  margin: 0.2em 1em 0.5em 0;
+}
+
+.ik-embed.ik-align-wrap-right {
+  float: right;
+  margin: 0.2em 0 0.5em 1em;
+}
+
+/* ---- captions ------------------------------------------------------------ */
+
+.ik-caption {
+  display: block;
+  width: 0;
+  min-width: 100%;
+  margin-top: 0.35em;
+  text-align: center;
+  font-size: var(--font-smaller);
+  font-style: italic;
+  line-height: 1.35;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+/* Add one action to Obsidian's own strip; its controls and visibility remain native. */
+.ik-edit-native {
+  position: static;
+  min-height: 0;
+  height: auto;
+  margin: 0;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+.ik-edit-btn svg { width: var(--icon-size, 16px); height: var(--icon-size, 16px); }
+
+/* Touch has no hover. Reveal the existing strip as a unit, keeping core actions. */
+body.is-mobile .markdown-source-view.mod-cm6 .image-embed.ik-embed > .embed-actions:has(.ik-edit-native) { opacity: 1; pointer-events: auto; }
+body.is-mobile .ik-edit-native { min-width: 44px; min-height: 44px; }
+
+/* Reading view and older Obsidian versions may not provide an action strip. */
+.ik-edit-fallback {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-s);
+  background: var(--background-primary);
+  color: var(--text-muted);
+  opacity: 0;
+  cursor: pointer;
+}
+
+.ik-embed:hover > .ik-edit-fallback,
+.ik-embed:focus-within > .ik-edit-fallback { opacity: 1; }
+
+@media (hover: none) {
+  .markdown-source-view.mod-cm6 .image-embed.ik-embed > .embed-actions:has(.ik-edit-native) { opacity: 1; pointer-events: auto; }
+  .ik-edit-fallback { opacity: 1; width: 44px; height: 44px; }
+  .ik-edit-native { min-width: 44px; min-height: 44px; }
+}
+
+.ik-edit-btn:focus-visible,
+.ik-chip:focus-visible {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 2px;
+}
+
+.ik-embed.ik-editing {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 2px;
+  border-radius: var(--image-radius, 4px);
+}
+
+/* ---- caption editing ---------------------------------------------------------------- */
+
+.ik-caption.ik-caption-editing {
+  outline: 1px solid var(--interactive-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+  cursor: text;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
+.ik-caption.ik-caption-editing:empty::before {
+  content: attr(data-placeholder);
+  color: var(--text-faint);
+}
+
+/* ---- toolbar ------------------------------------------------------------------- */
+
+.ik-toolbar {
+  position: fixed;
+  z-index: var(--layer-popover, 30);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  max-width: calc(100vw - 16px);
+  padding: 6px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: var(--radius-m);
+  background: var(--background-primary);
+  box-shadow: var(--shadow-l);
+  font-size: var(--font-ui-small);
+  color: var(--text-normal);
+  user-select: none;
+}
+
+.ik-group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.ik-sep {
+  width: 1px;
+  height: 20px;
+  margin: 0 4px;
+  background: var(--background-modifier-border);
+}
+
+.ik-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  gap: 6px;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-normal);
+  font-size: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ik-chip svg {
+  width: 16px;
+  height: 16px;
+}
+
+@media (hover: hover) {
+  .ik-chip:hover:not([disabled]) {
+    background: var(--background-modifier-hover);
+  }
+}
+
+.ik-chip.is-active {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+.ik-chip[disabled] {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.ik-width {
+  width: 64px;
+  padding: 3px 6px;
+  text-align: right;
+  font-size: inherit;
+}
+
+.ik-unit {
+  margin-left: 2px;
+  color: var(--text-muted);
+}
+
+.ik-toolbar.ik-toolbar-mobile {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  top: auto;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(100%, 560px);
+  max-width: 100%;
+  padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  border-radius: var(--radius-l) var(--radius-l) 0 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.ik-toolbar-mobile .ik-sep { display: none; }
+.ik-toolbar-mobile .ik-sizes {
+  grid-column: 1 / -1;
+  grid-row: 1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+.ik-toolbar-mobile .ik-alignment { grid-column: 1; grid-row: 2; }
+.ik-toolbar-mobile .ik-custom-size { grid-column: 2; grid-row: 2; }
+.ik-toolbar-mobile .ik-actions { grid-column: 1 / -1; grid-row: 3; }
+.ik-toolbar-mobile .ik-actions > :last-child { margin-inline-start: auto; }
+.ik-toolbar-mobile .ik-chip { min-width: 44px; min-height: 44px; padding: 8px; }
+.ik-toolbar-mobile .ik-sizes .ik-chip { min-width: 0; overflow-wrap: anywhere; line-height: 1.2; }
+.ik-toolbar-mobile .ik-width { min-height: 44px; width: 68px; font-size: 16px; }
+.ik-caption-input { width: 100%; min-height: 120px; resize: vertical; font-size: 16px; }
