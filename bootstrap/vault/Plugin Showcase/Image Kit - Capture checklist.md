@@ -1,5 +1,8 @@
 # Image Kit capture checklist
 
+For phone installation, see [[Install Image Kit 0.1.1 on mobile]]. The installer uses Templater
+and travels as an ordinary note; no GitHub release or manual hidden-folder copy is required.
+
 Use [[Image Kit - Quiet details]] in Live Preview. Close unrelated tabs and sidebars with private
 content. Keep the same Obsidian theme and zoom across desktop captures. Save original PNGs.
 

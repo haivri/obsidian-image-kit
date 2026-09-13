@@ -9,6 +9,24 @@ travel with the kit. Fullscreen Image and Simple Gallery are optional companions
 
 The primary vault copy has already been installed for this development preview.
 
+## Install on a phone
+
+The primary vault includes **Plugin Showcase/Install Image Kit 0.1.1 on mobile**. Sync that
+note to the phone, enable Templater, duplicate the installer note, and run **Templater:
+Replace templates in the active file** on the copy. It verifies the embedded runtime files,
+preserves settings, backs up existing files, and enables Image Kit. It requires Obsidian 1.13+.
+The installer has automated success and rollback tests; physical-phone execution remains to be checked.
+
+To regenerate it from a production build:
+
+```sh
+node bootstrap/build-mobile-installer.mjs '/tmp/Install Image Kit 0.1.1 on mobile.md'
+```
+
+A conventional runtime ZIP is also provided under **Plugin Showcase/Image Kit downloads**
+in the primary vault. Extract its `image-kit` folder into the vault's `.obsidian/plugins/`
+folder only when that folder is accessible on the device, then enable Image Kit.
+
 ## Before public release
 
 - Capture and review the real-phone panel and keyboard behavior.
