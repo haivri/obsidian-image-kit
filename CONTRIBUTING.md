@@ -27,11 +27,11 @@ captioning.
 
 Run it under the default theme, Minimal, and one heavy theme.
 
-## Mobile keyboard regression
+## Mobile sheet and resize regression
 
 Run `tests/keyboard-layout.obsidian.js` through Obsidian’s eval CLI against the installed build.
 It creates and removes a disposable note using the bootstrap lotus image. It checks native
 `--keyboard-height` changes without a VisualViewport resize, as well as combined signals,
 panning, dismissal, and short landscape space. All cases must pass. Do not substitute a
 viewport-only simulation for this check; 0.1.2 passed that simulation but failed on an iPhone.
-Confirm the final behavior on a physical iPhone before calling the keyboard issue resolved.
+The current check also verifies there is no caption modal, Save/Cancel behavior, 48-pixel grips, visible resize preview, deferred saving, and cancellation on lock. Confirm the final behavior on a physical iPhone before calling the keyboard issue resolved.

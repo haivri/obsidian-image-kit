@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.4 - 2026-09-13
+
+- Restore captions and alignment in Reading view by decorating native image placeholders after loading and re-rendering.
+- Replace the mobile caption modal with a slide-up page of the image toolbar, with Cancel and Save above the text field.
+- Add top-left and bottom-right diagonal resize grips with 48-pixel touch targets during mobile editing. Dragging previews the width; Done or an outside tap saves it.
+- Cancel pending resizing when Page Lock is applied or the plugin unloads. Desktop retains native resize controls.
+- Remove the obsolete modal positioning helper and cover the new caption, resize, and keyboard-boundary workflows.
+
 ## 0.1.3 - 2026-09-13
 
 - Correct the iPhone caption dialog regression in 0.1.2 by honoring Obsidian’s native keyboard height even when VisualViewport does not resize.

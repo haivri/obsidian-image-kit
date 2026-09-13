@@ -55,3 +55,46 @@ test('upgrades a reading-view fallback when native controls become available', (
   assert.equal(embed.querySelectorAll('.ik-edit-btn').length, 1);
   assert.ok(actions.firstElementChild.classList.contains('ik-edit-native'));
 });
+
+test('reading view decorates late-loaded images, repairs native replacements, and stops observing on unload', async () => {
+  const { ReadingImages } = await loadModule('reading-view');
+  globalThis.MutationObserver = window.MutationObserver;
+  const frames = new Map(); let next = 0;
+  window.requestAnimationFrame = callback => { frames.set(++next, callback); return next; };
+  window.cancelAnimationFrame = id => frames.delete(id);
+  const flush = async () => {
+    await Promise.resolve();
+    const callbacks = [...frames.values()]; frames.clear(); callbacks.forEach(callback => callback());
+  };
+  const root = window.document.createElement('div');
+  root.className = 'markdown-reading-view';
+  root.innerHTML = '<span class="internal-embed" src="photo.jpg" alt="A caption|center|240"></span>';
+  window.document.body.append(root);
+  const embed = root.querySelector('.internal-embed');
+  const child = new ReadingImages(root, () => decorate(embed, options));
+  child.onload(); await flush();
+  assert.equal(embed.querySelector('.ik-caption'), null);
+  embed.classList.add('image-embed');
+  embed.innerHTML = '<img width="240">';
+  await flush();
+  assert.equal(embed.querySelector('.ik-caption').textContent, 'A caption');
+  assert.ok(embed.classList.contains('ik-align-center'));
+  const draft = embed.querySelector('.ik-caption');
+  draft.classList.add('ik-caption-editing');
+  draft.textContent = 'Uncommitted caption';
+  await flush();
+  assert.equal(embed.querySelector('.ik-caption'), draft);
+  assert.equal(draft.textContent, 'Uncommitted caption', 'observer must preserve active inline editing');
+  // Native reloads can replace children without changing alt or the cache stamp.
+  embed.innerHTML = '<img width="240">';
+  await flush();
+  assert.equal(embed.querySelectorAll('.ik-caption').length, 1);
+  assert.equal(embed.querySelector('.ik-caption').textContent, 'A caption');
+  await flush(); await flush();
+  assert.equal(frames.size, 0, 'decoration must settle without an observer loop');
+  child.unload();
+  embed.setAttribute('alt', 'Changed|right|240');
+  await flush();
+  assert.equal(embed.querySelector('.ik-caption').textContent, 'A caption');
+  root.remove();
+});

@@ -7,6 +7,7 @@ import { livePreviewExtension } from './lp-extension';
 import { rememberReadingContext, Resolver } from './resolver';
 import { registerPasteDrop } from './paste-drop';
 import { isEditorLocked } from './lock';
+import { ReadingImages } from './reading-view';
 import { DEFAULT_SETTINGS, ignoreList, ImageKitSettings, ImageKitSettingTab, normalizeSettings } from './settings';
 const LEGACY_VIEWER_ID = 'fullscreen-image';
 
@@ -41,7 +42,7 @@ export default class ImageKitPlugin extends Plugin {
   }
 
   onunload(): void {
-    this.session?.close();
+    this.session?.close(false);
     document.body.classList.remove('ik-session');
     document.querySelectorAll('.ik-caption, .ik-edit-btn').forEach((el) => el.remove());
     document.querySelectorAll('[data-ik]').forEach((el) => {
@@ -61,10 +62,17 @@ export default class ImageKitPlugin extends Plugin {
   // ---- decoration ------------------------------------------------------------
 
   private postProcess(el: HTMLElement, ctx: MarkdownPostProcessorContext): void {
-    const embeds = el.querySelectorAll<HTMLElement>(EMBED_SELECTOR);
-    if (embeds.length === 0) return;
-    embeds.forEach((embed) => rememberReadingContext(embed, el, ctx));
-    this.decorateRoot(el);
+    // Core initially supplies a plain internal-embed placeholder, adding the
+    // image-embed class and image element only after postprocessing.
+    const readingSelector = `${EMBED_SELECTOR}, .internal-embed[src]`;
+    if (!el.matches(readingSelector) && !el.querySelector(readingSelector)) return;
+    const update = () => {
+      const embeds = Array.from(el.querySelectorAll<HTMLElement>(readingSelector));
+      if (el.matches(readingSelector)) embeds.unshift(el);
+      embeds.forEach(embed => rememberReadingContext(embed, el, ctx));
+      this.decorateRoot(el);
+    };
+    ctx.addChild(new ReadingImages(el, update));
   }
 
   decorateRoot(root: HTMLElement): void {
@@ -73,6 +81,7 @@ export default class ImageKitPlugin extends Plugin {
       showCaptions: this.settings.showCaptions,
       showEditButton: !isMobile() || this.settings.mobileEditButton === 'always'
     };
+    if (root.matches(EMBED_SELECTOR)) decorate(root, options);
     root.querySelectorAll<HTMLElement>(EMBED_SELECTOR).forEach((embed) => decorate(embed, options));
   }
 

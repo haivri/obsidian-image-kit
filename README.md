@@ -7,6 +7,7 @@ on desktop and mobile.
 ## What you can do
 
 - Apply Small, Medium, Large, Original, or an exact width.
+- On mobile, drag either diagonal corner grip to preview a new size; tap Done or outside the image to save.
 - Align left, center, or right, and wrap text around an image.
 - Add and edit a plain-text caption without editing the link syntax.
 - Reveal the attachment in the file explorer, copy it, or open it fullscreen.
@@ -15,7 +16,7 @@ on desktop and mobile.
 
 In Live Preview, **Edit image** appears before Obsidian’s **Edit this block** button.
 The native zoom and resize controls remain available. The desktop toolbar stays aligned
-to the note column; phones get a compact bottom panel and a caption dialog with Save and Cancel.
+to the note column; phones get a compact bottom panel and a slide-up caption editor with Save and Cancel above the text field.
 With **Page Lock**, locked images stay available to view while image editing is blocked.
 
 <!-- Add screenshots/01-desktop-layout.png and screenshots/02-mobile-layout.png after capture. -->

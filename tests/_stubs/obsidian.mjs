@@ -4,6 +4,12 @@ export class TFile {}
 export class Notice { constructor(message) { this.message = message; } }
 export class Plugin {}
 export class PluginSettingTab {}
+export class MarkdownRenderChild {
+  cleanups = [];
+  constructor(containerEl) { this.containerEl = containerEl; }
+  register(callback) { this.cleanups.push(callback); }
+  unload() { this.cleanups.forEach(callback => callback()); }
+}
 export class Setting {}
 export const Platform = { isMobile: false, isDesktopApp: true };
 export function setIcon() {}

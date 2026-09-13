@@ -31,12 +31,15 @@ export function decorate(container: HTMLElement, options: DecorateOptions): void
   const editable = isEditable(container);
   const actions = container.querySelector<HTMLElement>(':scope > .embed-actions');
   const key = `2|${actions ? 'native' : 'fallback'}|${editable ? 'e' : 'r'}|${options.showCaptions ? 'c' : '-'}|${options.showEditButton ? 'b' : '-'}|${options.grammar.ignore?.join(',') ?? ''}|${alt}`;
-  if (container.getAttribute(CONTAINER_ATTR) === key) return;
-  container.setAttribute(CONTAINER_ATTR, key);
-
   const path = embedPathOf(container) ?? img.src;
   const form = container.hasAttribute('src') ? 'wiki' : 'md';
   const layout = parseAltSegment(alt, path, form, options.grammar);
+  const caption = options.showCaptions ? layout.caption : undefined;
+  const captionEl = container.querySelector(':scope > .ik-caption');
+  const captionMatches = captionEl?.classList.contains('ik-caption-editing') || (caption ? captionEl?.textContent === caption : !captionEl);
+  const editMatches = !editable || !options.showEditButton || !!container.querySelector('.ik-edit-btn');
+  if (container.getAttribute(CONTAINER_ATTR) === key && captionMatches && editMatches) return;
+  container.setAttribute(CONTAINER_ATTR, key);
 
   container.classList.add('ik-embed');
   container.classList.remove(...ALIGN_CLASSES);
@@ -44,7 +47,6 @@ export function decorate(container: HTMLElement, options: DecorateOptions): void
 
   container.querySelectorAll('.ik-caption, .ik-edit-btn').forEach((el) => el.remove());
 
-  const caption = options.showCaptions ? layout.caption : undefined;
   container.classList.toggle('ik-has-caption', Boolean(caption));
   if (caption) {
     const cap = container.createEl('figcaption', { cls: 'ik-caption', text: caption });

@@ -6,7 +6,7 @@
 - Run `npm test`, `npm run lint`, and the production build before publishing.
 - Layout state lives only in the image link text (`![[a.jpg|Caption|center|400]]`). Never add a sidecar, cache, or per-vault data file for image layout.
 - Scope is deliberately narrow: size, alignment, captions, delegated fullscreen viewing, opt-in paste/drop with originals kept, and file actions. No conversion, compression, annotation, crop/rotate, batch processing, or galleries.
-- Preserve native image controls and gestures. Add Edit image before Edit this block in the native action strip. Delegate viewing to Fullscreen Image or Obsidian; do not maintain a second viewer or resize-handle implementation.
+- Preserve native image controls and gestures. Add Edit image before Edit this block in the native action strip. Delegate viewing to Fullscreen Image or Obsidian; do not maintain a second viewer. Desktop uses native resize handles. Mobile editing adds two diagonal touch grips with pending width saved on Done or outside tap, as explicitly requested by the user.
 - Rendering must not depend on any theme: stamp `ik-*` classes from JS and style them with core Obsidian variables only.
 - Publish through `/Users/robertfleming/vaults/obsidian-vault/_obsidian-os/scripts/release-obsidian-plugin image-kit`.
 - The publisher installs only runtime artifacts into the primary vault and preserves its existing `data.json` settings.
