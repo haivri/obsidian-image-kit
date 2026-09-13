@@ -118,6 +118,14 @@ body.is-mobile .ik-edit-native { min-width: 44px; min-height: 44px; }
   border-radius: var(--image-radius, 4px);
 }
 
+/* Touch grips frame the image itself; keep the caption outside that frame. */
+.ik-embed.ik-editing.ik-touch-resizing { outline: none; }
+.ik-embed.ik-editing.ik-touch-resizing img {
+  outline: 2px solid var(--interactive-accent);
+  outline-offset: 2px;
+  border-radius: var(--image-radius, 4px);
+}
+
 /* ---- caption editing ---------------------------------------------------------------- */
 
 .ik-caption.ik-caption-editing {
@@ -278,7 +286,7 @@ body button.ik-resize-grip:is(:hover, :active, :focus-visible, .mobile-tap) {
   outline: none;
 }
 .ik-resize-grip:focus-visible::after { outline: 2px solid var(--interactive-accent); outline-offset: 3px; }
-.ik-resize-grip::after { content: ''; position: absolute; width: 18px; height: 18px; top: 14px; left: 14px; border-color: var(--interactive-accent); border-style: solid; filter: drop-shadow(0 0 2px var(--background-primary)); }
-.ik-resize-grip-start::after { border-width: 4px 0 0 4px; }
-.ik-resize-grip-end::after { border-width: 0 4px 4px 0; }
+.ik-resize-grip::after { content: ''; position: absolute; box-sizing: border-box; width: 18px; height: 18px; border-color: var(--interactive-accent); border-style: solid; filter: drop-shadow(0 0 2px var(--background-primary)); }
+.ik-resize-grip-start::after { top: 14px; left: 14px; border-width: 4px 0 0 4px; }
+.ik-resize-grip-end::after { bottom: 14px; right: 14px; border-width: 0 4px 4px 0; }
 .ik-touch-resizing .image-resize-corner { display: none !important; }

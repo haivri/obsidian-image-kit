@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.6 - 2026-09-13
+
+- Frame only the image during touch resizing, leaving its caption outside the selection outline. Mirror the bottom-right grip’s spacing to match the top-left corner.
+
 ## 0.1.5 - 2026-09-13
 
 - Show only the L-shaped resize corners, removing the native button background and shadow while retaining 48-pixel touch targets and keyboard focus indicators.
