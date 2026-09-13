@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.8 - 2026-09-13
+
+- Remove the redundant product name from the manifest description to satisfy the community plugin directory check.
+
 ## 0.1.7 - 2026-09-13
 
 - First public release, with desktop and iPhone screenshots and installation instructions.

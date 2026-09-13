@@ -1,9 +1,9 @@
 {
   "id": "image-kit",
   "name": "Image Kit",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "minAppVersion": "1.13.0",
-  "description": "Size, align, and caption images alongside Obsidian's native image controls. Layout is saved in the link itself.",
+  "description": "Size, align, and caption images alongside native image controls. Layout is saved in the link itself.",
   "author": "Robert Fleming",
   "fundingUrl": "https://www.buymeacoffee.com/robertfleming",
   "isDesktopOnly": false
