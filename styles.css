@@ -250,7 +250,9 @@ body.is-mobile .ik-edit-native { min-width: 44px; min-height: 44px; }
 .ik-toolbar-mobile .ik-width { min-height: 44px; width: 68px; font-size: 16px; }
 .ik-caption-input { width: 100%; min-height: 120px; resize: vertical; font-size: 16px; }
 
-/* Center within the space above the keyboard, including viewport panning on iOS. */
+/* Obsidian's native keyboard can overlay an unchanged VisualViewport. Use the
+ * same keyboard-height boundary as its app container, intersected with the
+ * browser's visible area. CSS responds even when no viewport event fires. */
 .modal-container.ik-caption-modal-container {
   position: fixed;
   top: var(--ik-dialog-top, 0px);
@@ -258,7 +260,7 @@ body.is-mobile .ik-edit-native { min-width: 44px; min-height: 44px; }
   right: auto;
   bottom: auto;
   width: var(--ik-dialog-width, 100vw);
-  height: var(--ik-dialog-height, 100dvh);
+  height: min(var(--ik-dialog-height, 100dvh), max(0px, calc(100vh - var(--keyboard-height, 0px) - var(--ik-dialog-top, 0px))));
   min-height: 0;
   box-sizing: border-box;
   padding: max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px));

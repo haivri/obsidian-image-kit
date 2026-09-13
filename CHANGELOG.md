@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.3 - 2026-09-13
+
+- Correct the iPhone caption dialog regression in 0.1.2 by honoring Obsidian’s native keyboard height even when VisualViewport does not resize.
+- Intersect native keyboard and visible viewport bounds without subtracting the keyboard twice.
+- Add a rendered regression check covering keyboard overlay, viewport panning, short landscape space, and keyboard dismissal without resize events.
+
 ## 0.1.2 - 2026-09-13
 
 - Keep the phone caption dialog above the keyboard using the visible viewport, including viewport panning and rotation.
