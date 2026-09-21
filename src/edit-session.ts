@@ -33,6 +33,7 @@ export class EditSession {
   private hoverDismiss: HoverDismiss | null = null;
   private readonly dismissal: SessionDismiss;
   private moreMenu: Menu | null = null;
+  private moreMenuElement: HTMLElement | null = null;
   private widthInput!: HTMLInputElement;
   private chips: { el: HTMLButtonElement; isActive: (l: ImageLink) => boolean; isDisabled?: (l: ImageLink) => boolean }[] = [];
   private busy = false;
@@ -93,10 +94,10 @@ export class EditSession {
     if (isNoteLocked(this.plugin.app, this.resolved.sourcePath, this.container)) this.close(false);
   }
 
-  close(saveResize = true): void {
+  close(savePending = true): void {
     if (this.closed) return;
     const pending: { width?: number; caption?: string | null } = {};
-    if (saveResize && !isNoteLocked(this.plugin.app, this.resolved.sourcePath, this.container)) {
+    if (savePending && !isNoteLocked(this.plugin.app, this.resolved.sourcePath, this.container)) {
       const width = this.resizeGrips?.pendingWidth;
       if (width !== undefined) pending.width = width;
       if (this.captionEditor) pending.caption = this.captionEditor.textContent?.trim() || null;
@@ -119,6 +120,7 @@ export class EditSession {
     this.dismissal.stop();
     this.moreMenu?.hide();
     this.moreMenu = null;
+    this.moreMenuElement = null;
     document.removeEventListener('keydown', this.onKeyDown, { capture: true });
     document.removeEventListener('scroll', this.onReposition, { capture: true });
     window.removeEventListener('resize', this.onReposition);
@@ -336,8 +338,13 @@ export class EditSession {
     this.moreMenu?.hide();
     const menu = new Menu();
     this.moreMenu = menu;
-    menu.setUseNativeMenu(false).setParentElement(this.toolbar);
-    menu.onHide(() => { if (this.moreMenu === menu) this.moreMenu = null; });
+    menu.setUseNativeMenu(false);
+    menu.onHide(() => {
+      if (this.moreMenu === menu) {
+        this.moreMenu = null;
+        this.moreMenuElement = null;
+      }
+    });
     menu.addItem((i) => i.setTitle('Open fullscreen').setIcon('maximize').onClick(() => {
       if (img) {
         this.close();
@@ -359,7 +366,12 @@ export class EditSession {
       void writeLink(app, this.resolved, '').then((ok) => { if (ok) this.close(false); });
     }));
     const rect = anchor.getBoundingClientRect();
-    menu.showAtPosition({ x: rect.left, y: rect.bottom + 4 });
+    const doc = this.toolbar.ownerDocument;
+    const existingMenus = new Set(Array.from(doc.querySelectorAll('.menu')));
+    menu.showAtPosition({ x: rect.left, y: rect.bottom + 4 }, doc);
+    // Obsidian mounts menus under body, even with setParentElement().
+    this.moreMenuElement = Array.from(doc.querySelectorAll<HTMLElement>('.menu'))
+      .find(element => !existingMenus.has(element)) ?? null;
   }
 
   private render(): void {
@@ -542,7 +554,8 @@ export class EditSession {
 
   private readonly containsInteraction = (target: EventTarget | null): boolean => {
     if (!(target instanceof Node)) return false;
-    // The More menu is parented to this toolbar, unlike unrelated menus/modals.
+    // Protect only this session’s More menu, not unrelated menus or modals.
+    if (this.moreMenuElement?.contains(target)) return true;
     if (this.toolbar.contains(target) || this.resizeGrips?.contains(target)) return true;
     if (target.instanceOf(Element) && target.closest('.embed-action:not(.ik-edit-btn), .image-resize-corner')) return false;
     if (this.container.contains(target)) return true;
