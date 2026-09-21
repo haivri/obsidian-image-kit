@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.9 - 2026-09-21
+
+- Open the layout menu when the mouse hovers over Edit image on desktop. Keep the menu open while moving into it, preserve an active edit, and retain mobile tap behavior.
+
 ## 0.1.8 - 2026-09-13
 
 - Remove the redundant product name from the manifest description to satisfy the community plugin directory check.

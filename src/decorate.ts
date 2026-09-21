@@ -4,7 +4,7 @@
  * so re-running is free and a changed link re-decorates from scratch.
  * Everything is derived from the link text; nothing is stored in the DOM.
  */
-import { setIcon } from 'obsidian';
+import { Platform, setIcon } from 'obsidian';
 import { embedPathOf } from './resolver';
 import { GrammarOptions, parseAltSegment } from './grammar';
 import { CONTAINER_ATTR, imageOf, isEditable, viewModeOf } from './dom';
@@ -13,6 +13,7 @@ export interface DecorateOptions {
   grammar: GrammarOptions;
   showCaptions: boolean;
   showEditButton: boolean;
+  onEditHover?: (container: HTMLElement) => void;
 }
 
 const ALIGN_CLASSES = ['ik-align-center', 'ik-align-right', 'ik-align-wrap-left', 'ik-align-wrap-right'];
@@ -59,6 +60,11 @@ export function decorate(container: HTMLElement, options: DecorateOptions): void
       attr: { type: 'button', 'aria-label': 'Edit image', title: 'Edit image' }
     });
     setIcon(btn, 'sliders-horizontal');
+    if (Platform.isDesktopApp && !Platform.isMobile && options.onEditHover) {
+      btn.addEventListener('pointerenter', (event) => {
+        if (event.pointerType === 'mouse' && event.buttons === 0) options.onEditHover?.(container);
+      });
+    }
     const sourceButton = actions?.querySelector(':scope > .edit-block-button');
     if (sourceButton) actions?.insertBefore(btn, sourceButton);
   }

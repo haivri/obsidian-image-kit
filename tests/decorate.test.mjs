@@ -123,3 +123,34 @@ test('reading view decorates late-loaded images, repairs native replacements, an
   assert.equal(embed.querySelector('.ik-caption').textContent, 'A caption');
   root.remove();
 });
+
+test('desktop mouse hover opens editing once per entry without swallowing click or closing on leave', () => {
+  const embed = window.document.createElement('span');
+  embed.className = 'image-embed';
+  embed.setAttribute('src', 'photo.jpg');
+  embed.innerHTML = '<img>';
+  window.document.querySelector('.markdown-source-view').append(embed);
+  const opened = [];
+  const hoverOptions = { ...options, onEditHover: container => opened.push(container) };
+  decorate(embed, hoverOptions);
+  decorate(embed, hoverOptions);
+  const button = embed.querySelector('.ik-edit-btn');
+  const enter = (pointerType, buttons = 0) => {
+    const event = new window.Event('pointerenter');
+    Object.assign(event, { pointerType, buttons });
+    button.dispatchEvent(event);
+  };
+  enter('touch');
+  enter('pen');
+  enter('mouse', 1);
+  assert.equal(opened.length, 0, 'touch, pen, and dragging must not open on hover');
+  enter('mouse');
+  assert.deepEqual(opened, [embed]);
+  button.dispatchEvent(new window.Event('pointerleave'));
+  assert.deepEqual(opened, [embed], 'leaving for the toolbar must not toggle editing');
+  let clicks = 0;
+  button.addEventListener('click', () => clicks++);
+  button.click();
+  assert.equal(clicks, 1, 'click remains available');
+  embed.remove();
+});

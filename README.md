@@ -50,7 +50,7 @@ when enabled, or to Obsidian otherwise. Simple Gallery owns gallery editing.
 
 ## Start using it
 
-1. Hover over an image in Live Preview, or tap its **Edit image** action on mobile.
+1. In Live Preview on desktop, hover over the image, then hover over **Edit image** to open the layout menu. Clicking also works; on mobile, tap **Edit image**.
 2. Choose a size and alignment. Use **Caption** to add or change the caption.
 3. Select **Done** and continue writing.
 

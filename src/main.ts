@@ -79,7 +79,11 @@ export default class ImageKitPlugin extends Plugin {
     const options = {
       grammar: this.grammarOptions(),
       showCaptions: this.settings.showCaptions,
-      showEditButton: !isMobile() || this.settings.mobileEditButton === 'always'
+      showEditButton: !isMobile() || this.settings.mobileEditButton === 'always',
+      onEditHover: (container: HTMLElement) => {
+        // Hover opens controls without replacing an edit already in progress.
+        if (!this.session) this.openSession(container);
+      }
     };
     if (root.matches(EMBED_SELECTOR)) decorate(root, options);
     root.querySelectorAll<HTMLElement>(EMBED_SELECTOR).forEach((embed) => decorate(embed, options));
@@ -95,6 +99,7 @@ export default class ImageKitPlugin extends Plugin {
   // ---- sessions --------------------------------------------------------------
 
   openSession(container: HTMLElement): void {
+    if (this.session && container.classList.contains('ik-editing')) return;
     this.session?.close();
     this.session = EditSession.open(this, container);
   }
