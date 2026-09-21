@@ -37,12 +37,18 @@ export class HoverDismiss {
 
   private readonly onOut = (event: PointerEvent): void => {
     if (this.stopped || event.pointerType !== 'mouse' || !this.contains(event.target) || this.contains(event.relatedTarget)) return;
+    this.scheduleClose();
+  };
+
+  /** Also used after an async selection if the pointer has already left. */
+  scheduleClose(): void {
+    if (this.stopped) return;
     this.cancel();
     this.timer = this.win.setTimeout(() => {
       this.stop();
       this.close();
     }, 300);
-  };
+  }
 
   private readonly onInteract = (event: Event): void => {
     if (this.contains(event.target)) this.stop();

@@ -54,7 +54,7 @@ when enabled, or to Obsidian otherwise. Simple Gallery owns gallery editing.
 2. Choose a size and alignment. Use **Caption** to add or change the caption.
 3. Select **Done** and continue writing.
 
-**Open image controls** in settings defaults to **Click only**. Choose **Hover or click** for desktop mouse access: hovering over **Edit image** opens a preview, which closes 300 ms after leaving both the button and menu. Move into either to keep it open. Clicking the button or interacting with a control keeps the menu open until Escape or an outside click. Desktop hover mode hides Done; click-only mode and mobile keep it. Opening settings closes image controls, and hover stays inactive while a modal is open. Mobile remains tap-only.
+**Open image controls** in settings defaults to **Click only**. Choose **Hover or click** for desktop mouse access: hovering over **Edit image** opens a preview, which closes 300 ms after leaving both the button and menu. Move into either to keep it open. Clicking the button keeps the menu open; after choosing an option, hover dismissal resumes. Caption and width entry stay open while you edit. Escape or an outside click closes the controls. Desktop hover mode hides Done; click-only mode and mobile keep it. Opening settings closes image controls, and hover stays inactive while a modal is open. Mobile remains tap-only.
 
 **More actions** includes file shortcuts, fullscreen viewing, Reset, and Remove image from note.
 Reading view keeps captions and alignment visible, with image editing controls hidden.

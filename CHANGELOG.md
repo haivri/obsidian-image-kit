@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.12 - 2026-09-21
+
+- Resume hover dismissal after choosing a size, alignment, or More action, including selections that finish after the pointer has left. Keep active caption/width editing protected.
+
 ## 0.1.11 - 2026-09-21
 
 - Hide Done in desktop Hover or click mode; retain it in click-only mode and on mobile.

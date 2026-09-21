@@ -79,10 +79,19 @@ export class EditSession {
   }
 
   enableHoverDismiss(): void {
+    this.pin();
     this.hoverDismiss = new HoverDismiss(this.toolbar.ownerDocument, target => {
       if (!(target instanceof Node)) return false;
       return this.toolbar.contains(target) || Boolean(this.container.querySelector('.ik-edit-btn')?.contains(target));
     }, () => this.close());
+  }
+
+  private resumeHoverAfterSelection(): void {
+    if (this.closed || this.busy || isMobile() || this.plugin.settings.openImageControls !== 'hover') return;
+    if (this.captionEditor || this.captionSheet || this.moreMenu || this.toolbar.ownerDocument.activeElement === this.widthInput) return;
+    this.enableHoverDismiss();
+    const button = this.container.querySelector('.ik-edit-btn');
+    if (!this.toolbar.matches(':hover') && !button?.matches(':hover')) this.hoverDismiss?.scheduleClose();
   }
 
   pin(): void {
@@ -156,6 +165,7 @@ export class EditSession {
       e.stopPropagation();
       this.pin();
       opts.onClick();
+      this.resumeHoverAfterSelection();
     });
     this.chips.push({ el, isActive: opts.isActive ?? (() => false), isDisabled: opts.isDisabled });
     return el;
@@ -206,6 +216,7 @@ export class EditSession {
       }
     });
     this.widthInput.addEventListener('change', () => void this.commitWidthInput());
+    this.widthInput.addEventListener('blur', () => this.resumeHoverAfterSelection());
 
     this.sep(tb);
     const align = tb.createDiv({ cls: 'ik-group ik-alignment', attr: { role: 'group', 'aria-label': 'Image alignment' } });
@@ -343,6 +354,7 @@ export class EditSession {
       if (this.moreMenu === menu) {
         this.moreMenu = null;
         this.moreMenuElement = null;
+        this.resumeHoverAfterSelection();
       }
     });
     menu.addItem((i) => i.setTitle('Open fullscreen').setIcon('maximize').onClick(() => {
@@ -430,7 +442,11 @@ export class EditSession {
 
   private async commit(text: string): Promise<void> {
     if (isNoteLocked(this.plugin.app, this.resolved.sourcePath, this.container)) return this.close();
-    if (this.closed || this.busy || text === this.link.raw) return;
+    if (this.closed || this.busy) return;
+    if (text === this.link.raw) {
+      this.resumeHoverAfterSelection();
+      return;
+    }
     this.busy = true;
     this.resizeGrips?.destroy();
     this.resizeGrips = null;
@@ -443,6 +459,7 @@ export class EditSession {
     } finally {
       this.busy = false;
       this.position();
+      this.resumeHoverAfterSelection();
     }
   }
 

@@ -13,3 +13,4 @@ export class MarkdownRenderChild {
 export class Setting {}
 export const Platform = { isMobile: false, isDesktopApp: true };
 export function setIcon() {}
+export class Menu {}
