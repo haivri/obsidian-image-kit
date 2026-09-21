@@ -12,6 +12,7 @@ import { writeLink } from './writer';
 import { isNoteLocked } from './lock';
 import { TouchResize } from './touch-resize';
 import { HoverDismiss } from './hover-dismiss';
+import { SessionDismiss } from './session-dismiss';
 import { canUseDesktopActions, copyImage, openWithDefaultApp, revealInNavigation, showInSystemExplorer } from './file-actions';
 
 const REATTACH_TIMEOUT_MS = 400;
@@ -30,6 +31,8 @@ export class EditSession {
   private readonly toolbar: HTMLDivElement;
   private closed = false;
   private hoverDismiss: HoverDismiss | null = null;
+  private readonly dismissal: SessionDismiss;
+  private moreMenu: Menu | null = null;
   private widthInput!: HTMLInputElement;
   private chips: { el: HTMLButtonElement; isActive: (l: ImageLink) => boolean; isDisabled?: (l: ImageLink) => boolean }[] = [];
   private busy = false;
@@ -52,7 +55,7 @@ export class EditSession {
     this.render();
     this.position();
 
-    document.addEventListener('pointerdown', this.onPointerDownOutside, { capture: true });
+    this.dismissal = new SessionDismiss(document, this.containsInteraction, () => this.close());
     document.addEventListener('keydown', this.onKeyDown, { capture: true });
     document.addEventListener('scroll', this.onReposition, { capture: true, passive: true });
     window.addEventListener('resize', this.onReposition);
@@ -92,17 +95,30 @@ export class EditSession {
 
   close(saveResize = true): void {
     if (this.closed) return;
-    const width = saveResize && !isNoteLocked(this.plugin.app, this.resolved.sourcePath, this.container)
-      ? this.resizeGrips?.pendingWidth : undefined;
+    const pending: { width?: number; caption?: string | null } = {};
+    if (saveResize && !isNoteLocked(this.plugin.app, this.resolved.sourcePath, this.container)) {
+      const width = this.resizeGrips?.pendingWidth;
+      if (width !== undefined) pending.width = width;
+      if (this.captionEditor) pending.caption = this.captionEditor.textContent?.trim() || null;
+      if (this.toolbar.ownerDocument.activeElement === this.widthInput) {
+        const typedWidth = Math.round(Number(this.widthInput.value));
+        if (Number.isFinite(typedWidth) && typedWidth >= MIN_WIDTH) pending.width = typedWidth;
+      }
+    }
     this.closed = true;
     this.pin();
     this.resizeGrips?.destroy();
     this.resizeGrips = null;
-    if (width !== undefined) {
-      void writeLink(this.plugin.app, this.resolved, applyLayout(this.link, { width }))
-        .catch(() => new Notice('Image size could not be saved.'));
+    if (Object.keys(pending).length) {
+      const text = applyLayout(this.link, pending);
+      if (text !== this.link.raw) {
+        void writeLink(this.plugin.app, this.resolved, text)
+          .catch(() => new Notice('Image edits could not be saved.'));
+      }
     }
-    document.removeEventListener('pointerdown', this.onPointerDownOutside, { capture: true });
+    this.dismissal.stop();
+    this.moreMenu?.hide();
+    this.moreMenu = null;
     document.removeEventListener('keydown', this.onKeyDown, { capture: true });
     document.removeEventListener('scroll', this.onReposition, { capture: true });
     window.removeEventListener('resize', this.onReposition);
@@ -206,7 +222,9 @@ export class EditSession {
     const actions = tb.createDiv({ cls: 'ik-group ik-actions' });
     this.chip(actions, 'Caption', { icon: 'captions', title: 'Edit caption', isActive: (l) => Boolean(l.caption), onClick: () => this.editCaption() });
     const more = this.chip(actions, 'More', { icon: 'ellipsis', title: 'More actions', onClick: () => this.openMenu(more) });
-    this.chip(actions, 'Done', { icon: 'check', title: 'Done (Esc)', onClick: () => this.close() });
+    if (isMobile() || this.plugin.settings.openImageControls !== 'hover') {
+      this.chip(actions, 'Done', { icon: 'check', title: 'Done (Esc)', onClick: () => this.close() });
+    }
   }
 
   // ---- captions ----------------------------------------------------------------
@@ -315,7 +333,11 @@ export class EditSession {
     const app = this.plugin.app;
     const file = this.imageFile();
     const img = imageOf(this.container);
+    this.moreMenu?.hide();
     const menu = new Menu();
+    this.moreMenu = menu;
+    menu.setUseNativeMenu(false).setParentElement(this.toolbar);
+    menu.onHide(() => { if (this.moreMenu === menu) this.moreMenu = null; });
     menu.addItem((i) => i.setTitle('Open fullscreen').setIcon('maximize').onClick(() => {
       if (img) {
         this.close();
@@ -518,19 +540,14 @@ export class EditSession {
 
   // ---- input -----------------------------------------------------------------
 
-  private readonly onPointerDownOutside = (e: PointerEvent): void => {
-    const t = e.target;
-    if (!(t instanceof Node)) return;
-    if (t.instanceOf(Element) && t.closest('.menu, .modal-container')) return;
-    if (this.toolbar.contains(t) || this.resizeGrips?.contains(t)) return;
-    if (t.instanceOf(Element) && t.closest('.embed-action:not(.ik-edit-btn), .image-resize-corner')) {
-      this.close();
-      return;
-    }
-    if (this.container.contains(t)) return;
-    // A tap on another image's edit button is handled by the plugin (it opens a new session).
-    if (t.instanceOf(Element) && t.closest('.ik-edit-btn')) return;
-    this.close();
+  private readonly containsInteraction = (target: EventTarget | null): boolean => {
+    if (!(target instanceof Node)) return false;
+    // The More menu is parented to this toolbar, unlike unrelated menus/modals.
+    if (this.toolbar.contains(target) || this.resizeGrips?.contains(target)) return true;
+    if (target.instanceOf(Element) && target.closest('.embed-action:not(.ik-edit-btn), .image-resize-corner')) return false;
+    if (this.container.contains(target)) return true;
+    // Another image's edit action is handled by the plugin's session switch.
+    return target.instanceOf(Element) && Boolean(target.closest('.ik-edit-btn'));
   };
 
   private readonly onKeyDown = (e: KeyboardEvent): void => {

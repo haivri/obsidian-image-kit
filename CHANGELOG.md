@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.11 - 2026-09-21
+
+- Hide Done in desktop Hover or click mode; retain it in click-only mode and on mobile.
+- Close image controls on outside clicks or when settings/modal dialogs open, and suppress hover reopening behind dialogs.
+- Keep only Image Kit’s own More menu protected from outside dismissal; cancel timers and remove listeners when closing. Preserve pending inline caption and valid width edits on outside dismissal.
+
 ## 0.1.10 - 2026-09-21
 
 - Default image controls to click-only, with an optional desktop Hover or click setting.
