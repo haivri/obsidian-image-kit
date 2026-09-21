@@ -50,9 +50,11 @@ when enabled, or to Obsidian otherwise. Simple Gallery owns gallery editing.
 
 ## Start using it
 
-1. In Live Preview on desktop, hover over the image, then hover over **Edit image** to open the layout menu. Clicking also works; on mobile, tap **Edit image**.
+1. In Live Preview, click **Edit image** to open the layout menu. On mobile, tap it.
 2. Choose a size and alignment. Use **Caption** to add or change the caption.
 3. Select **Done** and continue writing.
+
+**Open image controls** in settings defaults to **Click only**. Choose **Hover or click** for desktop mouse access: hovering over **Edit image** opens a preview, which closes 300 ms after leaving both the button and menu. Move into either to keep it open. Clicking the button or interacting with a control keeps the menu open until Done, Escape, or an outside click. Mobile remains tap-only.
 
 **More actions** includes file shortcuts, fullscreen viewing, Reset, and Remove image from note.
 Reading view keeps captions and alignment visible, with image editing controls hidden.

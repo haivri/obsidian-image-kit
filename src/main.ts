@@ -52,6 +52,7 @@ export default class ImageKitPlugin extends Plugin {
   }
 
   async saveSettings(): Promise<void> {
+    if (this.settings.openImageControls !== 'hover') this.session?.pin();
     await this.saveData(this.settings);
   }
 
@@ -82,7 +83,7 @@ export default class ImageKitPlugin extends Plugin {
       showEditButton: !isMobile() || this.settings.mobileEditButton === 'always',
       onEditHover: (container: HTMLElement) => {
         // Hover opens controls without replacing an edit already in progress.
-        if (!this.session) this.openSession(container);
+        if (!this.session && this.settings.openImageControls === 'hover') this.openSession(container, true);
       }
     };
     if (root.matches(EMBED_SELECTOR)) decorate(root, options);
@@ -98,10 +99,14 @@ export default class ImageKitPlugin extends Plugin {
 
   // ---- sessions --------------------------------------------------------------
 
-  openSession(container: HTMLElement): void {
-    if (this.session && container.classList.contains('ik-editing')) return;
+  openSession(container: HTMLElement, hover = false): void {
+    if (this.session && container.classList.contains('ik-editing')) {
+      if (!hover) this.session.pin();
+      return;
+    }
     this.session?.close();
     this.session = EditSession.open(this, container);
+    if (hover) this.session?.enableHoverDismiss();
   }
 
   sessionClosed(session: EditSession): void {

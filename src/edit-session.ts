@@ -11,6 +11,7 @@ import { embedPathOf, ResolvedLink } from './resolver';
 import { writeLink } from './writer';
 import { isNoteLocked } from './lock';
 import { TouchResize } from './touch-resize';
+import { HoverDismiss } from './hover-dismiss';
 import { canUseDesktopActions, copyImage, openWithDefaultApp, revealInNavigation, showInSystemExplorer } from './file-actions';
 
 const REATTACH_TIMEOUT_MS = 400;
@@ -28,6 +29,7 @@ export class EditSession {
   private resolved: ResolvedLink;
   private readonly toolbar: HTMLDivElement;
   private closed = false;
+  private hoverDismiss: HoverDismiss | null = null;
   private widthInput!: HTMLInputElement;
   private chips: { el: HTMLButtonElement; isActive: (l: ImageLink) => boolean; isDisabled?: (l: ImageLink) => boolean }[] = [];
   private busy = false;
@@ -72,6 +74,18 @@ export class EditSession {
     return this.resolved.link;
   }
 
+  enableHoverDismiss(): void {
+    this.hoverDismiss = new HoverDismiss(this.toolbar.ownerDocument, target => {
+      if (!(target instanceof Node)) return false;
+      return this.toolbar.contains(target) || Boolean(this.container.querySelector('.ik-edit-btn')?.contains(target));
+    }, () => this.close());
+  }
+
+  pin(): void {
+    this.hoverDismiss?.stop();
+    this.hoverDismiss = null;
+  }
+
   closeIfLocked(): void {
     if (isNoteLocked(this.plugin.app, this.resolved.sourcePath, this.container)) this.close(false);
   }
@@ -81,6 +95,7 @@ export class EditSession {
     const width = saveResize && !isNoteLocked(this.plugin.app, this.resolved.sourcePath, this.container)
       ? this.resizeGrips?.pendingWidth : undefined;
     this.closed = true;
+    this.pin();
     this.resizeGrips?.destroy();
     this.resizeGrips = null;
     if (width !== undefined) {
@@ -121,6 +136,7 @@ export class EditSession {
     el.addEventListener('click', (e) => {
       e.preventDefault();
       e.stopPropagation();
+      this.pin();
       opts.onClick();
     });
     this.chips.push({ el, isActive: opts.isActive ?? (() => false), isDisabled: opts.isDisabled });
@@ -158,6 +174,7 @@ export class EditSession {
     this.widthInput = custom.createEl('input', { cls: 'ik-width', attr: { type: 'number', min: String(MIN_WIDTH), step: '1', placeholder: 'Auto', 'aria-label': 'Width in pixels' } });
     custom.createSpan({ cls: 'ik-unit', text: 'px' });
     this.widthInput.addEventListener('keydown', (e) => {
+      this.pin();
       e.stopPropagation();
       if (e.key === 'Enter') {
         e.preventDefault();

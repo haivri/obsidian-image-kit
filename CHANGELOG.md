@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.10 - 2026-09-21
+
+- Default image controls to click-only, with an optional desktop Hover or click setting.
+- Close hover previews 300 ms after leaving the button and toolbar; cancel closing when returning and keep controls open after clicking or starting an edit.
+
 ## 0.1.9 - 2026-09-21
 
 - Open the layout menu when the mouse hovers over Edit image on desktop. Keep the menu open while moving into it, preserve an active edit, and retain mobile tap behavior.

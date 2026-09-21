@@ -47,3 +47,20 @@ test('invalid preset widths leave the stored value intact', async () => {
   assert.equal(plugin.settings.presets[0].width, 322);
   assert.equal(plugin.saves, 1);
 });
+
+test('image controls default to click only for new, existing, and invalid settings', () => {
+  for (const stored of [null, {}, { openImageControls: 'invalid' }, { openImageControls: null }]) {
+    assert.equal(normalizeSettings(stored).openImageControls, 'click');
+  }
+  assert.equal(normalizeSettings({ openImageControls: 'hover' }).openImageControls, 'hover');
+});
+
+test('image controls expose a saved choice between click and hover', async () => {
+  const { plugin, tab } = fixture();
+  const definition = tab.getSettingDefinitions().find(d => d.control.key === 'openImageControls');
+  assert.equal(definition.control.defaultValue, 'click');
+  assert.deepEqual(definition.control.options, { click: 'Click only', hover: 'Hover or click' });
+  await tab.setControlValue('openImageControls', 'hover');
+  assert.equal(plugin.settings.openImageControls, 'hover');
+  assert.equal(plugin.saves, 1);
+});

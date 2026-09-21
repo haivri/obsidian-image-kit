@@ -15,6 +15,7 @@ export interface ImageKitSettings {
   /** Comma-separated alt tokens that are never captions (e.g. CSS-snippet keywords). */
   captionIgnore: string;
   mobileEditButton: 'always' | 'menu';
+  openImageControls: 'click' | 'hover';
   handlePaste: boolean;
   renameTemplate: string;
 }
@@ -30,6 +31,7 @@ export const DEFAULT_SETTINGS: ImageKitSettings = {
   showCaptions: true,
   captionIgnore: '',
   mobileEditButton: 'always',
+  openImageControls: 'click',
   handlePaste: false,
   renameTemplate: '{notename}-{timestamp}'
 };
@@ -41,6 +43,7 @@ export function ignoreList(settings: ImageKitSettings): string[] {
 /** Merges stored data over defaults, keeping exactly three presets. */
 export function normalizeSettings(stored: Partial<ImageKitSettings> | null): ImageKitSettings {
   const merged: ImageKitSettings = { ...DEFAULT_SETTINGS, ...(stored ?? {}) };
+  merged.openImageControls = stored?.openImageControls === 'hover' ? 'hover' : 'click';
   const presets = Array.isArray(merged.presets) ? merged.presets.slice(0, 3) : [];
   while (presets.length < 3) presets.push({ ...DEFAULT_SETTINGS.presets[presets.length] });
   merged.presets = presets.map((p, i) => ({
@@ -71,6 +74,7 @@ export class ImageKitSettingTab extends PluginSettingTab {
       { name: 'Default alignment on insert', desc: 'Alignment for the optional paste and drop handler.', aliases: ['alignment', 'paste'], control: { type: 'dropdown', key: 'defaultInsertAlign', defaultValue: DEFAULT_SETTINGS.defaultInsertAlign, options: { left: 'Left', center: 'Center' } } },
       { name: 'Show captions', desc: 'Render caption text from the image link beneath the image.', aliases: ['figcaption', 'alt'], control: { type: 'toggle', key: 'showCaptions', defaultValue: DEFAULT_SETTINGS.showCaptions } },
       { name: 'Caption ignore words', desc: 'Comma-separated alt words that are never captions.', aliases: ['thumb', 'keywords'], control: { type: 'text', key: 'captionIgnore', defaultValue: DEFAULT_SETTINGS.captionIgnore } },
+      { name: 'Open image controls', desc: 'Desktop only. Hover previews close after leaving the button and menu; clicking or editing keeps them open.', aliases: ['hover', 'click', 'desktop'], control: { type: 'dropdown', key: 'openImageControls', defaultValue: DEFAULT_SETTINGS.openImageControls, options: { click: 'Click only', hover: 'Hover or click' } } },
       { name: 'Edit button on mobile', desc: 'Include the image edit action on touch devices, or use commands and the context menu.', aliases: ['mobile', 'touch'], control: { type: 'dropdown', key: 'mobileEditButton', defaultValue: DEFAULT_SETTINGS.mobileEditButton, options: { always: 'Always', menu: 'Context menu only' } } },
       { name: 'Handle pasted and dropped images', desc: 'Keep the original file, rename it, and apply the default size.', aliases: ['paste', 'drop'], control: { type: 'toggle', key: 'handlePaste', defaultValue: DEFAULT_SETTINGS.handlePaste } },
       { name: 'Rename template', desc: 'Filename for pasted images. Blank keeps the original name.', aliases: ['filename', 'timestamp'], control: { type: 'text', key: 'renameTemplate', defaultValue: DEFAULT_SETTINGS.renameTemplate } }
