@@ -8,7 +8,7 @@ import { rememberReadingContext, Resolver } from './resolver';
 import { registerPasteDrop } from './paste-drop';
 import { isEditorLocked } from './lock';
 import { ReadingImages } from './reading-view';
-import { modalIsOpen } from './session-dismiss';
+import { canHoverEdit, modalIsOpen } from './session-dismiss';
 import { DEFAULT_SETTINGS, ignoreList, ImageKitSettings, ImageKitSettingTab, normalizeSettings } from './settings';
 const LEGACY_VIEWER_ID = 'fullscreen-image';
 
@@ -84,7 +84,7 @@ export default class ImageKitPlugin extends Plugin {
       showEditButton: !isMobile() || this.settings.mobileEditButton === 'always',
       onEditHover: (container: HTMLElement) => {
         // Hover opens controls without replacing an edit already in progress.
-        if (!this.session && this.settings.openImageControls === 'hover' && !modalIsOpen(container.ownerDocument) && !container.ownerDocument.querySelector('.menu')) this.openSession(container, true);
+        if (!this.session && this.settings.openImageControls === 'hover' && canHoverEdit(container.ownerDocument)) this.openSession(container, true);
       }
     };
     if (root.matches(EMBED_SELECTOR)) decorate(root, options);

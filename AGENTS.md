@@ -5,6 +5,7 @@
 - Keep `main` clean. Commit and push completed work to `origin` after validation.
 - Push to `github` or publish GitHub tags/releases only with the user's explicit approval for that release. Approval for an earlier release does not carry forward. When authorized, release the exact same commit to both remotes.
 - Run `npm test`, `npm run lint`, and the production build before publishing.
+- Do not control or inspect the running Obsidian app or other computer UI without the user's explicit approval for that interaction. Source edits, automated tests, builds, and file deployment do not authorize app commands, reloads, settings changes, or in-app verification. Let the user verify in-app behavior unless they explicitly approve those checks.
 - Layout state lives only in the image link text (`![[a.jpg|Caption|center|400]]`). Never add a sidecar, cache, or per-vault data file for image layout.
 - Scope is deliberately narrow: size, alignment, captions, delegated fullscreen viewing, opt-in paste/drop with originals kept, and file actions. No conversion, compression, annotation, crop/rotate, batch processing, or galleries.
 - Preserve native image controls and gestures. Add Edit image before Edit this block in the native action strip. Delegate viewing to Fullscreen Image or Obsidian; do not maintain a second viewer. Desktop uses native resize handles. Mobile editing adds two diagonal touch grips with pending width saved on Done or outside tap, as explicitly requested by the user.

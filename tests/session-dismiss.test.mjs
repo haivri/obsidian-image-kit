@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import { JSDOM } from 'jsdom';
 import { loadModule } from './_load.mjs';
-const { SessionDismiss, modalIsOpen } = await loadModule('session-dismiss');
+const { SessionDismiss, modalIsOpen, canHoverEdit } = await loadModule('session-dismiss');
 
 function fixture(t) {
   const { window } = new JSDOM('<div id="controls"><button></button><div class="menu"><button></button></div></div><button id="outside"></button>');
@@ -60,4 +60,33 @@ test('unload disconnects modal observation and outside listeners', async t => {
   f.doc.body.append(modal);
   await Promise.resolve();
   assert.equal(f.closes(), 0);
+});
+
+
+test('switching to a settings window closes controls once; unload removes the blur listener', t => {
+  const f = fixture(t);
+  f.window.dispatchEvent(new f.window.Event('blur'));
+  assert.equal(f.closes(), 1);
+  f.window.dispatchEvent(new f.window.Event('blur'));
+  assert.equal(f.closes(), 1);
+});
+
+test('hover requires a focused window with no modal or menu, and focus alone does not reopen', t => {
+  const f = fixture(t);
+  let focused = false;
+  t.mock.method(f.doc, 'hasFocus', () => focused);
+  f.doc.querySelector('.menu').remove();
+  assert.equal(canHoverEdit(f.doc), false);
+  focused = true;
+  assert.equal(canHoverEdit(f.doc), true);
+  for (const className of ['modal-container', 'menu']) {
+    const overlay = f.doc.createElement('div');
+    overlay.className = className;
+    f.doc.body.append(overlay);
+    assert.equal(canHoverEdit(f.doc), false);
+    overlay.remove();
+  }
+  f.window.dispatchEvent(new f.window.Event('focus'));
+  assert.equal(f.closes(), 0);
+  assert.equal(canHoverEdit(f.doc), true);
 });
