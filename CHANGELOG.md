@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.13 - 2026-09-21
+
+- Extend hover closing to 700 ms and include the image, toolbar, and connecting gap in one hover area. Returning cancels closing; outside clicks still dismiss immediately.
+
 ## 0.1.12 - 2026-09-21
 
 - Resume hover dismissal after choosing a size, alignment, or More action, including selections that finish after the pointer has left. Keep active caption/width editing protected.

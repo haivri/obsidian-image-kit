@@ -35,7 +35,7 @@ test('a completed selection unpins hover mode and mouse-out closes after the del
   f.s.enableHoverDismiss();
   f.s.pin();
   f.s.resumeHoverAfterSelection();
-  f.leave(); f.tick(299);
+  f.leave(); f.tick(699);
   assert.equal(f.s.closed, false);
   f.tick(1);
   assert.equal(f.s.closed, true);
@@ -46,7 +46,7 @@ test('selection finishing after mouse-out still dismisses without a second mouse
   f.s.pin(); f.s.busy = true;
   f.leave(); f.s.resumeHoverAfterSelection(); f.tick(400);
   assert.equal(f.s.closed, false);
-  f.s.busy = false; f.s.resumeHoverAfterSelection(); f.tick(300);
+  f.s.busy = false; f.s.resumeHoverAfterSelection(); f.tick(700);
   assert.equal(f.s.closed, true);
 });
 
@@ -71,6 +71,6 @@ test('repeated selections replace old listeners and timers instead of closing pr
   f.leave(); f.s.resumeHoverAfterSelection(); f.tick(200);
   f.s.resumeHoverAfterSelection(); f.tick(200);
   assert.equal(f.s.closed, false);
-  f.tick(100);
+  f.tick(500);
   assert.equal(f.s.closed, true);
 });

@@ -1,0 +1,18 @@
+#!/usr/bin/env node
+// This is an explicit-intent guard, not proof of user consent. See AGENTS.md.
+const { execFileSync } = require('node:child_process');
+const { readFileSync } = require('node:fs');
+const [remote, url] = process.argv.slice(2);
+if (remote !== 'github' && !/github\.com(?=[:/]|$)/i.test(url ?? '')) process.exit(0);
+const approved = process.env.IMAGE_KIT_GITHUB_APPROVED_COMMIT;
+const git = (...args) => execFileSync('git', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+const deny = () => {
+  process.stderr.write('GitHub push blocked: fresh user approval for this exact change is required. See AGENTS.md.\n');
+  process.exit(1);
+};
+if (!approved || approved !== git('rev-parse', 'HEAD')) deny();
+for (const line of readFileSync(0, 'utf8').trim().split('\n').filter(Boolean)) {
+  const [, sha] = line.split(/\s+/);
+  try { if (git('rev-parse', `${sha}^{commit}`) !== approved) deny(); }
+  catch { deny(); }
+}

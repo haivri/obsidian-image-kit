@@ -11,7 +11,7 @@ import { embedPathOf, ResolvedLink } from './resolver';
 import { writeLink } from './writer';
 import { isNoteLocked } from './lock';
 import { TouchResize } from './touch-resize';
-import { HoverDismiss } from './hover-dismiss';
+import { HoverDismiss, inHoverArea } from './hover-dismiss';
 import { SessionDismiss } from './session-dismiss';
 import { canUseDesktopActions, copyImage, openWithDefaultApp, revealInNavigation, showInSystemExplorer } from './file-actions';
 
@@ -31,6 +31,7 @@ export class EditSession {
   private readonly toolbar: HTMLDivElement;
   private closed = false;
   private hoverDismiss: HoverDismiss | null = null;
+  private hoverPoint: { x: number; y: number } | null = null;
   private readonly dismissal: SessionDismiss;
   private moreMenu: Menu | null = null;
   private moreMenuElement: HTMLElement | null = null;
@@ -57,6 +58,7 @@ export class EditSession {
     this.position();
 
     this.dismissal = new SessionDismiss(document, this.containsInteraction, () => this.close());
+    document.addEventListener('pointermove', this.onHoverMove, true);
     document.addEventListener('keydown', this.onKeyDown, { capture: true });
     document.addEventListener('scroll', this.onReposition, { capture: true, passive: true });
     window.addEventListener('resize', this.onReposition);
@@ -82,16 +84,22 @@ export class EditSession {
     this.pin();
     this.hoverDismiss = new HoverDismiss(this.toolbar.ownerDocument, target => {
       if (!(target instanceof Node)) return false;
-      return this.toolbar.contains(target) || Boolean(this.container.querySelector('.ik-edit-btn')?.contains(target));
-    }, () => this.close());
+      return this.toolbar.contains(target) || this.container.contains(target);
+    }, () => this.close(), (x, y) => inHoverArea(x, y, [this.container, this.toolbar]));
   }
+
+  private readonly onHoverMove = (event: PointerEvent): void => {
+    if (event.pointerType === 'mouse') this.hoverPoint = { x: event.clientX, y: event.clientY };
+  };
 
   private resumeHoverAfterSelection(): void {
     if (this.closed || this.busy || isMobile() || this.plugin.settings.openImageControls !== 'hover') return;
     if (this.captionEditor || this.captionSheet || this.moreMenu || this.toolbar.ownerDocument.activeElement === this.widthInput) return;
     this.enableHoverDismiss();
-    const button = this.container.querySelector('.ik-edit-btn');
-    if (!this.toolbar.matches(':hover') && !button?.matches(':hover')) this.hoverDismiss?.scheduleClose();
+    const inArea = this.hoverPoint
+      ? inHoverArea(this.hoverPoint.x, this.hoverPoint.y, [this.container, this.toolbar])
+      : this.toolbar.matches(':hover') || this.container.matches(':hover');
+    if (!inArea) this.hoverDismiss?.scheduleClose();
   }
 
   pin(): void {
@@ -127,6 +135,7 @@ export class EditSession {
       }
     }
     this.dismissal.stop();
+    document.removeEventListener('pointermove', this.onHoverMove, true);
     this.moreMenu?.hide();
     this.moreMenu = null;
     this.moreMenuElement = null;
