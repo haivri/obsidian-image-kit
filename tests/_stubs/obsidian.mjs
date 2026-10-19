@@ -3,6 +3,7 @@
 export class TFile {}
 export class Notice { constructor(message) { this.message = message; } }
 export class Plugin {}
+export class MarkdownView {}
 export class PluginSettingTab {}
 export class MarkdownRenderChild {
   cleanups = [];

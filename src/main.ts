@@ -9,6 +9,7 @@ import { registerPasteDrop } from './paste-drop';
 import { isEditorLocked } from './lock';
 import { ReadingImages } from './reading-view';
 import { canHoverEdit, modalIsOpen } from './session-dismiss';
+import { HoverOpen } from './hover-open';
 import { DEFAULT_SETTINGS, ignoreList, ImageKitSettings, ImageKitSettingTab, normalizeSettings } from './settings';
 const LEGACY_VIEWER_ID = 'fullscreen-image';
 
@@ -20,6 +21,7 @@ export default class ImageKitPlugin extends Plugin {
   settings: ImageKitSettings = DEFAULT_SETTINGS;
   resolver!: Resolver;
   private session: EditSession | null = null;
+  private readonly hoverOpen = new HoverOpen();
 
   async onload(): Promise<void> {
     this.settings = normalizeSettings((await this.loadData()) as Partial<ImageKitSettings> | null);
@@ -43,6 +45,7 @@ export default class ImageKitPlugin extends Plugin {
   }
 
   onunload(): void {
+    this.hoverOpen.cancel();
     this.session?.close(false);
     document.body.classList.remove('ik-session');
     document.querySelectorAll('.ik-caption, .ik-edit-btn').forEach((el) => el.remove());
@@ -53,6 +56,7 @@ export default class ImageKitPlugin extends Plugin {
   }
 
   async saveSettings(): Promise<void> {
+    this.hoverOpen.cancel();
     if (this.settings.openImageControls !== 'hover') this.session?.pin();
     await this.saveData(this.settings);
   }
@@ -82,9 +86,12 @@ export default class ImageKitPlugin extends Plugin {
       grammar: this.grammarOptions(),
       showCaptions: this.settings.showCaptions,
       showEditButton: !isMobile() || this.settings.mobileEditButton === 'always',
-      onEditHover: (container: HTMLElement) => {
+      onEditHover: (container: HTMLElement, button: HTMLElement) => {
         // Hover opens controls without replacing an edit already in progress.
-        if (!this.session && this.settings.openImageControls === 'hover' && canHoverEdit(container.ownerDocument)) this.openSession(container, true);
+        const eligible = () => !this.session && this.settings.openImageControls === 'hover' && canHoverEdit(container.ownerDocument);
+        if (eligible()) this.hoverOpen.schedule(button, () => {
+          if (eligible()) this.openSession(container);
+        });
       }
     };
     if (root.matches(EMBED_SELECTOR)) decorate(root, options);
@@ -100,15 +107,15 @@ export default class ImageKitPlugin extends Plugin {
 
   // ---- sessions --------------------------------------------------------------
 
-  openSession(container: HTMLElement, hover = false): void {
+  openSession(container: HTMLElement): void {
+    this.hoverOpen.cancel();
     if (modalIsOpen(container.ownerDocument)) return;
     if (this.session && container.classList.contains('ik-editing')) {
-      if (!hover) this.session.pin();
       return;
     }
     this.session?.close();
     this.session = EditSession.open(this, container);
-    if (hover) this.session?.enableHoverDismiss();
+    if (!isMobile() && this.settings.openImageControls === 'hover') this.session?.enableHoverDismiss();
   }
 
   sessionClosed(session: EditSession): void {

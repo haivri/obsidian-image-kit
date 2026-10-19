@@ -13,7 +13,7 @@ export interface DecorateOptions {
   grammar: GrammarOptions;
   showCaptions: boolean;
   showEditButton: boolean;
-  onEditHover?: (container: HTMLElement) => void;
+  onEditHover?: (container: HTMLElement, button: HTMLElement) => void;
 }
 
 const ALIGN_CLASSES = ['ik-align-center', 'ik-align-right', 'ik-align-wrap-left', 'ik-align-wrap-right'];
@@ -62,7 +62,7 @@ export function decorate(container: HTMLElement, options: DecorateOptions): void
     setIcon(btn, 'sliders-horizontal');
     if (Platform.isDesktopApp && !Platform.isMobile && options.onEditHover) {
       btn.addEventListener('pointerenter', (event) => {
-        if (event.pointerType === 'mouse' && event.buttons === 0) options.onEditHover?.(container);
+        if (event.pointerType === 'mouse' && event.buttons === 0) options.onEditHover?.(container, btn);
       });
     }
     const sourceButton = actions?.querySelector(':scope > .edit-block-button');

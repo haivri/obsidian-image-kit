@@ -84,8 +84,12 @@ export class EditSession {
     this.pin();
     this.hoverDismiss = new HoverDismiss(this.toolbar.ownerDocument, target => {
       if (!(target instanceof Node)) return false;
-      return this.toolbar.contains(target) || this.container.contains(target);
-    }, () => this.close(), (x, y) => inHoverArea(x, y, [this.container, this.toolbar]));
+      return this.hoverElements().some(element => element.contains(target));
+    }, () => this.close(), (x, y) => inHoverArea(x, y, this.hoverElements()));
+  }
+
+  private hoverElements(): HTMLElement[] {
+    return [this.toolbar, ...Array.from(this.container.querySelectorAll<HTMLElement>('img, :scope > .ik-caption, :scope > .embed-actions, .ik-edit-btn'))];
   }
 
   private readonly onHoverMove = (event: PointerEvent): void => {
@@ -97,8 +101,8 @@ export class EditSession {
     if (this.captionEditor || this.captionSheet || this.moreMenu || this.toolbar.ownerDocument.activeElement === this.widthInput) return;
     this.enableHoverDismiss();
     const inArea = this.hoverPoint
-      ? inHoverArea(this.hoverPoint.x, this.hoverPoint.y, [this.container, this.toolbar])
-      : this.toolbar.matches(':hover') || this.container.matches(':hover');
+      ? inHoverArea(this.hoverPoint.x, this.hoverPoint.y, this.hoverElements())
+      : this.hoverElements().some(element => element.matches(':hover'));
     if (!inArea) this.hoverDismiss?.scheduleClose();
   }
 
@@ -209,6 +213,7 @@ export class EditSession {
 
     const custom = tb.createDiv({ cls: 'ik-group ik-custom-size' });
     this.widthInput = custom.createEl('input', { cls: 'ik-width', attr: { type: 'number', min: String(MIN_WIDTH), step: '1', placeholder: 'Auto', 'aria-label': 'Width in pixels' } });
+    this.widthInput.addEventListener('focus', () => this.pin());
     custom.createSpan({ cls: 'ik-unit', text: 'px' });
     this.widthInput.addEventListener('keydown', (e) => {
       this.pin();
@@ -254,6 +259,7 @@ export class EditSession {
   /** Edits the caption in place under the image; Enter commits, Escape cancels. */
   private editCaption(): void {
     if (this.closed || this.captionEditor || this.captionSheet) return;
+    this.pin();
     if (this.compact) {
       this.toolbar.addClass('ik-caption-mode');
       this.toolbar.setAttribute('role', 'group');
@@ -297,6 +303,7 @@ export class EditSession {
       const text = editor.textContent?.trim() ?? '';
       this.cancelCaptionEdit();
       if (text !== current) void this.apply({ caption: text || null });
+      else this.resumeHoverAfterSelection();
     };
     editor.addEventListener('keydown', (e) => {
       e.stopPropagation();
@@ -306,6 +313,7 @@ export class EditSession {
       } else if (e.key === 'Escape') {
         e.preventDefault();
         this.cancelCaptionEdit();
+        this.resumeHoverAfterSelection();
       }
     });
     editor.addEventListener('blur', () => { if (this.captionEditor === editor) commit(); });
@@ -329,6 +337,7 @@ export class EditSession {
     if (restoreFocus && !this.closed) {
       this.position();
       this.toolbar.querySelector<HTMLElement>('[aria-label="Edit caption"]')?.focus({ preventScroll: true });
+      this.resumeHoverAfterSelection();
     }
   }
 
@@ -457,6 +466,7 @@ export class EditSession {
       return;
     }
     this.busy = true;
+    this.pin();
     this.resizeGrips?.destroy();
     this.resizeGrips = null;
     const key = this.keyOf(this.container);

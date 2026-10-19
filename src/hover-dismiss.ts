@@ -1,4 +1,6 @@
-/** A hover preview becomes persistent as soon as the user interacts with it. */
+const CLOSE_DELAY_MS = 700;
+
+/** Pointer dismissal; the edit session suspends it only for active edits. */
 export class HoverDismiss {
   private timer: number | null = null;
   private readonly win: Window;
@@ -14,8 +16,6 @@ export class HoverDismiss {
     doc.addEventListener('pointerover', this.onOver, true);
     doc.addEventListener('pointerout', this.onOut, true);
     doc.addEventListener('pointermove', this.onMove, true);
-    doc.addEventListener('pointerdown', this.onInteract, true);
-    doc.addEventListener('focusin', this.onInteract, true);
   }
 
   /** Pinning and disposal both cancel pending dismissal and release listeners. */
@@ -25,8 +25,6 @@ export class HoverDismiss {
     this.doc.removeEventListener('pointerover', this.onOver, true);
     this.doc.removeEventListener('pointerout', this.onOut, true);
     this.doc.removeEventListener('pointermove', this.onMove, true);
-    this.doc.removeEventListener('pointerdown', this.onInteract, true);
-    this.doc.removeEventListener('focusin', this.onInteract, true);
   }
 
   private cancel(): void {
@@ -48,7 +46,7 @@ export class HoverDismiss {
       this.cancel();
       return;
     }
-    if (this.contains(event.target)) this.scheduleClose();
+    this.scheduleClose();
   };
 
   private readonly onMove = (event: PointerEvent): void => {
@@ -59,23 +57,21 @@ export class HoverDismiss {
 
   /** Also used after an async selection if the pointer has already left. */
   scheduleClose(): void {
-    if (this.stopped) return;
-    this.cancel();
+    if (this.stopped || this.timer !== null) return;
     this.timer = this.win.setTimeout(() => {
       this.stop();
       this.close();
-    }, 700);
+    }, CLOSE_DELAY_MS);
   }
-
-  private readonly onInteract = (event: Event): void => {
-    if (this.contains(event.target)) this.stop();
-  };
 }
 
-/** The bounding area joins the image and toolbar without intercepting clicks. */
+/** Actual controls plus short vertical bridges, never their enclosing rectangle. */
 export function inHoverArea(x: number, y: number, elements: HTMLElement[]): boolean {
   const rects = elements.map(element => element.getBoundingClientRect()).filter(rect => rect.width > 0 && rect.height > 0);
-  if (!rects.length) return false;
-  return x >= Math.min(...rects.map(rect => rect.left)) && x <= Math.max(...rects.map(rect => rect.right))
-    && y >= Math.min(...rects.map(rect => rect.top)) && y <= Math.max(...rects.map(rect => rect.bottom));
+  if (rects.some(rect => x >= rect.left && x <= rect.right && y >= rect.top && y <= rect.bottom)) return true;
+  return rects.some(upper => rects.some(lower => {
+    const gap = lower.top - upper.bottom;
+    return gap > 0 && gap <= 16 && y >= upper.bottom && y <= lower.top
+      && x >= Math.max(upper.left, lower.left) && x <= Math.min(upper.right, lower.right);
+  }));
 }

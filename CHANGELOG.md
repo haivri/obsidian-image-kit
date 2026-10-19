@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- Wait 350 ms before opening controls on mouse hover to avoid accidental flybys; clicking still opens immediately.
+- In Hover or click mode, dismiss both hover- and click-opened controls 700 ms after leaving their actual bounds and short connecting gaps. Empty surrounding space and ordinary clicks no longer keep them open.
+- Protect active caption/width edits and the More menu, and resume dismissal after unchanged or canceled caption edits.
+
 ## 0.1.13 - 2026-09-21
 
 - Extend hover closing to 700 ms and include the image, toolbar, and connecting gap in one hover area. Returning cancels closing; outside clicks still dismiss immediately.
