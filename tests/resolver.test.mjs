@@ -46,3 +46,22 @@ test('pickLinkInSection: ordinal among same-path links across lines, prefixes un
 function pick(x) {
   return x ? { raw: x.link.raw, line: x.line } : null;
 }
+
+test('ambiguous path fallback without an offset refuses to choose an image', () => {
+  assert.equal(r.pickLinkOnLine('![[a.png|100]] ![[a.png|200]]', null, 'a.png', {}), null);
+});
+
+test('Live Preview resolves the owning pane rather than the active file', () => {
+  const container = { getAttribute: () => 'a.png' };
+  const view = { posAtDOM: () => 0, state: { doc: { lineAt: () => ({ text: '![[a.png]]', from: 0, number: 1 }) } } };
+  const owner = { file: { path: 'inactive.md' }, editor: { cm: view }, containerEl: { contains: el => el === container } };
+  const app = { workspace: { activeEditor: { file: { path: 'active.md' } }, iterateAllLeaves: fn => fn({ view: owner }) } };
+  const resolver = new r.Resolver(app, () => ({}));
+  const resolved = resolver.resolveLive(view, container);
+  assert.equal(resolved.sourcePath, 'inactive.md');
+  assert.equal(resolved.isCurrent(), true);
+  owner.file = { path: 'another.md' };
+  assert.equal(resolved.isCurrent(), false);
+  owner.editor.cm = {};
+  assert.equal(resolver.resolveLive(view, container), null);
+});

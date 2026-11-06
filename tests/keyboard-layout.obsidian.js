@@ -23,6 +23,9 @@
     document.body.classList.add('is-mobile', 'is-phone');
     const layoutHeight = window.innerHeight;
     const cases = [
+      { name: 'Android navigation inset only', visibleHeight: layoutHeight, keyboard: 0, inset: 48, top: 0, width: 390 },
+      { name: 'Android inset includes keyboard', visibleHeight: layoutHeight, keyboard: 0, inset: layoutHeight - 390, top: 0, width: 390 },
+      { name: 'native inset overlaps keyboard and viewport', visibleHeight: 390, keyboard: layoutHeight - 390, inset: layoutHeight - 390, top: 0, width: 390 },
       { name: 'iOS keyboard overlays unchanged viewport', visibleHeight: layoutHeight, keyboard: layoutHeight - 390, top: 0, width: 390 },
       { name: 'both keyboard and viewport report the same occlusion', visibleHeight: 390, keyboard: layoutHeight - 390, top: 0, width: 390 },
       { name: 'viewport pans while native keyboard remains open', visibleHeight: 390, keyboard: layoutHeight - 440, top: 70, width: 390 },
@@ -32,12 +35,13 @@
     const results = [];
     for (const c of cases) {
       // Deliberately do not fire a resize event. Native CSS can change alone.
+      container.style.setProperty('--safe-area-inset-bottom', `${c.inset ?? 0}px`);
       container.style.setProperty('--keyboard-height', `${c.keyboard}px`);
       container.style.setProperty('--ik-viewport-height', `${c.visibleHeight}px`);
       container.style.setProperty('--ik-viewport-top', `${c.top}px`);
       container.style.width = `${c.width}px`;
       container.style.setProperty('--ik-viewport-bottom-gap', `${Math.max(0, layoutHeight - c.top - c.visibleHeight)}px`);
-      const bottom = Math.min(c.top + c.visibleHeight, layoutHeight - c.keyboard);
+      const bottom = Math.min(c.top + c.visibleHeight, layoutHeight - c.keyboard, layoutHeight - (c.inset ?? 0));
       const buttons = [...container.querySelectorAll('.ik-caption-sheet-header button')].map(button => {
         const rect = button.getBoundingClientRect();
         return { text: button.textContent, top: rect.top, bottom: rect.bottom, height: rect.height };

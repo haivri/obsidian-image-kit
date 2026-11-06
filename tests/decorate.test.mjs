@@ -154,3 +154,23 @@ test('desktop mouse hover opens editing once per entry without swallowing click 
   assert.equal(clicks, 1, 'click remains available');
   embed.remove();
 });
+
+test('caption appearance updates without replacing an active draft or native controls', () => {
+  const root = window.document.createElement('div');
+  root.className = 'markdown-source-view';
+  root.innerHTML = '<span class="image-embed" src="a.png" alt="Caption"><img></span>';
+  window.document.body.append(root);
+  const embed = root.firstElementChild;
+  decorate(embed, options);
+  const caption = embed.querySelector('.ik-caption');
+  const edit = embed.querySelector('.ik-edit-btn');
+  caption.classList.add('ik-caption-editing'); caption.textContent = 'Unsaved draft';
+  decorate(embed, { ...options, captionAppearance: { captionStyle: 'normal', captionBold: true, captionStrikethrough: true, captionSize: 'large' } });
+  assert.equal(embed.querySelector('.ik-caption'), caption);
+  assert.equal(caption.textContent, 'Unsaved draft');
+  assert.equal(embed.querySelector('.ik-edit-btn'), edit);
+  assert.equal(embed.style.getPropertyValue('--ik-caption-style'), 'normal');
+  assert.equal(embed.style.getPropertyValue('--ik-caption-weight'), 'var(--font-bold, 700)');
+  assert.equal(embed.style.getPropertyValue('--ik-caption-decoration'), 'line-through');
+  root.remove();
+});

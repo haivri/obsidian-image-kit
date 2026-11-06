@@ -1,12 +1,12 @@
-import { Editor, MarkdownPostProcessorContext, MarkdownView, Menu, Plugin } from 'obsidian';
-import { decorate, invalidate } from './decorate';
+import { Editor, MarkdownPostProcessorContext, MarkdownView, Menu, Notice, Plugin } from 'obsidian';
+import { decorate } from './decorate';
 import { EMBED_SELECTOR, isMobile } from './dom';
 import { EditSession } from './edit-session';
 import { Align, applyLayout, findImageLinks, GrammarOptions, ImageLink, resetLayout } from './grammar';
 import { livePreviewExtension } from './lp-extension';
 import { rememberReadingContext, Resolver } from './resolver';
 import { registerPasteDrop } from './paste-drop';
-import { isEditorLocked } from './lock';
+import { isEditorLocked, isEditorReadOnly, sourceFileForEditor } from './lock';
 import { ReadingImages } from './reading-view';
 import { canHoverEdit, modalIsOpen } from './session-dismiss';
 import { HoverOpen } from './hover-open';
@@ -18,7 +18,7 @@ interface PluginRegistry {
 }
 
 export default class ImageKitPlugin extends Plugin {
-  settings: ImageKitSettings = DEFAULT_SETTINGS;
+  settings: ImageKitSettings = normalizeSettings(DEFAULT_SETTINGS);
   resolver!: Resolver;
   private session: EditSession | null = null;
   private readonly hoverOpen = new HoverOpen();
@@ -52,6 +52,9 @@ export default class ImageKitPlugin extends Plugin {
     document.querySelectorAll('[data-ik]').forEach((el) => {
       el.removeAttribute('data-ik');
       el.classList.remove('ik-embed', 'ik-has-caption', 'ik-editing', 'ik-align-center', 'ik-align-right', 'ik-align-wrap-left', 'ik-align-wrap-right');
+      if (el.instanceOf(HTMLElement)) {
+        for (const name of ['style', 'weight', 'decoration', 'size']) el.style.removeProperty(`--ik-caption-${name}`);
+      }
     });
   }
 
@@ -85,6 +88,7 @@ export default class ImageKitPlugin extends Plugin {
     const options = {
       grammar: this.grammarOptions(),
       showCaptions: this.settings.showCaptions,
+      captionAppearance: this.settings,
       showEditButton: !isMobile() || this.settings.mobileEditButton === 'always',
       onEditHover: (container: HTMLElement, button: HTMLElement) => {
         // Hover opens controls without replacing an edit already in progress.
@@ -100,7 +104,6 @@ export default class ImageKitPlugin extends Plugin {
 
   redecorateAll(): void {
     document.querySelectorAll<HTMLElement>('.workspace-leaf-content').forEach((leaf) => {
-      invalidate(leaf);
       this.decorateRoot(leaf);
     });
   }
@@ -167,7 +170,7 @@ export default class ImageKitPlugin extends Plugin {
 
   /** The image link under the editor cursor, with its line, or null. */
   private linkAtCursor(editor: Editor): { link: ImageLink; line: number } | null {
-    if (isEditorLocked(this.app, editor)) return null;
+    if (isEditorLocked(this.app, editor) || isEditorReadOnly(editor)) return null;
     const cursor = editor.getCursor();
     const text = editor.getLine(cursor.line);
     const links = findImageLinks(text, this.grammarOptions());
@@ -176,8 +179,12 @@ export default class ImageKitPlugin extends Plugin {
   }
 
   private writeAtCursor(editor: Editor, found: { link: ImageLink; line: number }, text: string): void {
-    if (isEditorLocked(this.app, editor)) return;
+    if (isEditorLocked(this.app, editor) || isEditorReadOnly(editor)) return;
     if (text === found.link.raw) return;
+    if (editor.getLine(found.line)?.slice(found.link.start, found.link.end) !== found.link.raw) {
+      new Notice('Image link changed; edit not applied.');
+      return;
+    }
     editor.transaction({ changes: [{ from: { line: found.line, ch: found.link.start }, to: { line: found.line, ch: found.link.end }, text }] });
   }
 
@@ -216,7 +223,7 @@ export default class ImageKitPlugin extends Plugin {
         const found = this.linkAtCursor(editor);
         if (!found) return false;
         if (checking) return true;
-        const container = this.containerForLine(view instanceof MarkdownView ? view : null, found.line);
+        const container = this.containerForLine(view instanceof MarkdownView ? view : null, found);
         if (container) this.openSession(container);
         return true;
       }
@@ -224,13 +231,13 @@ export default class ImageKitPlugin extends Plugin {
   }
 
   /** Finds the rendered embed for a source line in the active Live Preview view. */
-  private containerForLine(view: MarkdownView | null, line: number): HTMLElement | null {
+  private containerForLine(view: MarkdownView | null, found: { line: number; link: ImageLink }): HTMLElement | null {
     const root = view?.contentEl ?? this.app.workspace.getActiveViewOfType(MarkdownView)?.contentEl;
     if (!root) return null;
     this.decorateRoot(root);
     for (const embed of Array.from(root.querySelectorAll<HTMLElement>(EMBED_SELECTOR))) {
       const resolved = this.resolver.resolve(embed);
-      if (resolved && resolved.line === line) return embed;
+      if (resolved && resolved.line === found.line && resolved.link.start === found.link.start && resolved.link.raw === found.link.raw) return embed;
     }
     return null;
   }
@@ -238,8 +245,13 @@ export default class ImageKitPlugin extends Plugin {
   private onEditorMenu(menu: Menu, editor: Editor): void {
     const found = this.linkAtCursor(editor);
     if (!found) return;
+    const source = sourceFileForEditor(this.app, editor);
+    const path = source?.path;
     const add = (title: string, icon: string, compute: (l: ImageLink) => string) => {
-      menu.addItem((item) => item.setSection('image-kit').setTitle(title).setIcon(icon).onClick(() => this.writeAtCursor(editor, found, compute(found.link))));
+      menu.addItem((item) => item.setSection('image-kit').setTitle(title).setIcon(icon).onClick(() => {
+        if (!source || sourceFileForEditor(this.app, editor) !== source || source.path !== path) return;
+        this.writeAtCursor(editor, found, compute(found.link));
+      }));
     };
     for (const p of this.settings.presets) add(`Width: ${p.name}`, 'image', (l) => applyLayout(l, { width: p.width }));
     add('Width: original', 'image', (l) => applyLayout(l, { width: null }));

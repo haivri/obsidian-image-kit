@@ -9,6 +9,10 @@ import { isNoteLocked } from './lock';
 
 export async function writeLink(app: App, resolved: ResolvedLink, text: string): Promise<boolean> {
   if (isNoteLocked(app, resolved.sourcePath) || resolved.view?.state.readOnly) return false;
+  if (resolved.isCurrent?.() === false) {
+    new Notice('Image source changed; edit not applied.');
+    return false;
+  }
   if (text === resolved.link.raw) return true;
 
   if (resolved.view && resolved.from !== undefined && resolved.to !== undefined) {
@@ -17,11 +21,13 @@ export async function writeLink(app: App, resolved: ResolvedLink, text: string):
       new Notice('Image link changed; edit not applied.');
       return false;
     }
+    const expectedLength = resolved.view.state.doc.length - (resolved.to - resolved.from) + text.length;
     resolved.view.dispatch({
       changes: { from: resolved.from, to: resolved.to, insert: text },
       scrollIntoView: false
     });
-    return resolved.view.state.doc.sliceString(resolved.from, resolved.from + text.length) === text;
+    return resolved.view.state.doc.length === expectedLength
+      && resolved.view.state.doc.sliceString(resolved.from, resolved.from + text.length) === text;
   }
 
   const file = app.vault.getAbstractFileByPath(resolved.sourcePath);
@@ -30,20 +36,18 @@ export async function writeLink(app: App, resolved: ResolvedLink, text: string):
   await app.vault.process(file, (data) => {
     const lines = data.split('\n');
     const lineText = lines[resolved.line];
-    if (lineText === undefined) return data;
+    if (isNoteLocked(app, resolved.sourcePath)) return data;
     const { start, end, raw } = resolved.link;
-    if (lineText.slice(start, end) === raw) {
+    if (lineText?.slice(start, end) === raw) {
       lines[resolved.line] = lineText.slice(0, start) + text + lineText.slice(end);
       applied = true;
       return lines.join('\n');
     }
     // The line moved: find the raw link once elsewhere before giving up.
-    const hits = lines.map((l, i) => (l.includes(raw) ? i : -1)).filter((i) => i >= 0);
-    if (hits.length === 1) {
-      const i = hits[0];
-      lines[i] = lines[i].replace(raw, text);
+    const first = data.indexOf(raw);
+    if (raw && first >= 0 && data.indexOf(raw, first + raw.length) < 0) {
       applied = true;
-      return lines.join('\n');
+      return data.slice(0, first) + text + data.slice(first + raw.length);
     }
     return data;
   });

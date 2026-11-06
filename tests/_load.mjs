@@ -11,7 +11,7 @@ export async function loadModule(name) {
     format: 'esm',
     platform: 'node',
     write: false,
-    external: ['@codemirror/*'],
+    external: ['@codemirror/*', new URL('./_stubs/obsidian.mjs', import.meta.url).pathname],
     alias: { obsidian: new URL('./_stubs/obsidian.mjs', import.meta.url).pathname }
   });
   const dir = new URL('./.out/', import.meta.url).pathname;

@@ -8,11 +8,13 @@ import { Platform, setIcon } from 'obsidian';
 import { embedPathOf } from './resolver';
 import { GrammarOptions, parseAltSegment } from './grammar';
 import { CONTAINER_ATTR, imageOf, isEditable, viewModeOf } from './dom';
+import { DEFAULT_SETTINGS, ImageKitSettings } from './settings';
 
 export interface DecorateOptions {
   grammar: GrammarOptions;
   showCaptions: boolean;
   showEditButton: boolean;
+  captionAppearance?: Pick<ImageKitSettings, 'captionStyle' | 'captionBold' | 'captionStrikethrough' | 'captionSize'>;
   onEditHover?: (container: HTMLElement, button: HTMLElement) => void;
 }
 
@@ -28,6 +30,17 @@ export function altOf(container: HTMLElement): string {
 export function decorate(container: HTMLElement, options: DecorateOptions): void {
   const img = imageOf(container);
   if (!img) return;
+  const appearance = options.captionAppearance ?? DEFAULT_SETTINGS;
+  const sizes = { default: 'var(--font-smaller)', small: 'var(--font-smallest)', medium: 'var(--font-small)', large: 'var(--font-text-size)' };
+  const properties = {
+    '--ik-caption-style': appearance.captionStyle,
+    '--ik-caption-weight': appearance.captionBold ? 'var(--font-bold, 700)' : 'normal',
+    '--ik-caption-decoration': appearance.captionStrikethrough ? 'line-through' : 'none',
+    '--ik-caption-size': sizes[appearance.captionSize]
+  };
+  for (const [name, value] of Object.entries(properties)) {
+    if (container.style.getPropertyValue(name) !== value) container.style.setProperty(name, value);
+  }
   const alt = altOf(container);
   const editable = isEditable(container) && viewModeOf(container) === 'live';
   const actions = container.querySelector<HTMLElement>(':scope > .embed-actions');
@@ -46,10 +59,10 @@ export function decorate(container: HTMLElement, options: DecorateOptions): void
   container.classList.remove(...ALIGN_CLASSES);
   if (layout.align) container.classList.add(`ik-align-${layout.align}`);
 
-  container.querySelectorAll('.ik-caption, .ik-edit-btn').forEach((el) => el.remove());
+  container.querySelectorAll('.ik-caption:not(.ik-caption-editing), .ik-edit-btn').forEach((el) => el.remove());
 
   container.classList.toggle('ik-has-caption', Boolean(caption));
-  if (caption) {
+  if (caption && !container.querySelector(':scope > .ik-caption-editing')) {
     const cap = container.createEl('figcaption', { cls: 'ik-caption', text: caption });
     cap.dataset.fullscreenCaption = 'show';
   }

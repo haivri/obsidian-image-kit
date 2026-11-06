@@ -44,6 +44,8 @@ export class EditSession {
   private captionSheet: HTMLTextAreaElement | null = null;
   private resizeGrips: TouchResize | null = null;
   private captionEditor: HTMLElement | null = null;
+  private captionCleanup: (() => void) | null = null;
+  private cancelReattach: (() => void) | null = null;
 
   private constructor(private readonly plugin: ImageKitPlugin, container: HTMLElement, resolved: ResolvedLink) {
     this.container = container;
@@ -128,6 +130,7 @@ export class EditSession {
       }
     }
     this.closed = true;
+    this.cancelReattach?.();
     this.pin();
     this.resizeGrips?.destroy();
     this.resizeGrips = null;
@@ -223,7 +226,7 @@ export class EditSession {
         void this.commitWidthInput();
       } else if (e.key === 'Escape') {
         e.preventDefault();
-        this.close();
+        this.close(false);
       } else if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
         e.preventDefault();
         this.nudge((e.key === 'ArrowUp' ? 1 : -1) * (e.shiftKey ? 10 : 1));
@@ -305,8 +308,9 @@ export class EditSession {
       if (text !== current) void this.apply({ caption: text || null });
       else this.resumeHoverAfterSelection();
     };
-    editor.addEventListener('keydown', (e) => {
+    const onKeyDown = (e: KeyboardEvent) => {
       e.stopPropagation();
+      if (e.isComposing) return;
       if (e.key === 'Enter') {
         e.preventDefault();
         commit();
@@ -315,10 +319,19 @@ export class EditSession {
         this.cancelCaptionEdit();
         this.resumeHoverAfterSelection();
       }
-    });
-    editor.addEventListener('blur', () => { if (this.captionEditor === editor) commit(); });
-    editor.addEventListener('pointerdown', (e) => e.stopPropagation());
-    editor.addEventListener('click', (e) => e.stopPropagation());
+    };
+    const onBlur = () => { if (this.captionEditor === editor) commit(); };
+    const stop = (event: Event) => event.stopPropagation();
+    editor.addEventListener('keydown', onKeyDown);
+    editor.addEventListener('blur', onBlur);
+    editor.addEventListener('pointerdown', stop);
+    editor.addEventListener('click', stop);
+    this.captionCleanup = () => {
+      editor.removeEventListener('keydown', onKeyDown);
+      editor.removeEventListener('blur', onBlur);
+      editor.removeEventListener('pointerdown', stop);
+      editor.removeEventListener('click', stop);
+    };
     editor.focus();
     const range = document.createRange();
     range.selectNodeContents(editor);
@@ -342,6 +355,8 @@ export class EditSession {
   }
 
   private cancelCaptionEdit(): void {
+    this.captionCleanup?.();
+    this.captionCleanup = null;
     const editor = this.captionEditor;
     if (!editor) return;
     this.captionEditor = null;
@@ -393,7 +408,8 @@ export class EditSession {
     menu.addItem((i) => i.setTitle('Reset size and alignment').setIcon('rotate-ccw').onClick(() => void this.reset()));
     menu.addItem((i) => i.setTitle('Remove image from note').setIcon('minus-circle').onClick(() => {
       if (this.closed || isNoteLocked(app, this.resolved.sourcePath, this.container)) return this.close();
-      void writeLink(app, this.resolved, '').then((ok) => { if (ok) this.close(false); });
+      void writeLink(app, this.resolved, '').then((ok) => { if (ok) this.close(false); })
+        .catch(() => { new Notice('Image edits could not be saved.'); this.close(false); });
     }));
     const rect = anchor.getBoundingClientRect();
     const doc = this.toolbar.ownerDocument;
@@ -475,6 +491,10 @@ export class EditSession {
       if (!ok) return this.close();
       const next = await this.reattach(key);
       if (!next) return this.close();
+    } catch (error) {
+      console.error('[image-kit] edit failed', error);
+      new Notice('Image edits could not be saved.');
+      this.close(false);
     } finally {
       this.busy = false;
       this.position();
@@ -498,11 +518,21 @@ export class EditSession {
 
   /** Waits for Obsidian to re-render the embed, then adopts the new element. */
   private reattach(key: Key | null): Promise<HTMLElement | null> {
-    if (!key) return Promise.resolve(null);
+    this.cancelReattach?.();
+    if (!key || this.closed) return Promise.resolve(null);
     const deadline = Date.now() + REATTACH_TIMEOUT_MS;
     return new Promise((resolve) => {
+      let timer: number | null = null;
+      let frame: number | null = null;
+      const finish = (element: HTMLElement | null) => {
+        if (timer !== null) window.clearTimeout(timer);
+        if (frame !== null) window.cancelAnimationFrame(frame);
+        this.cancelReattach = null;
+        resolve(element);
+      };
+      this.cancelReattach = () => finish(null);
       const attempt = () => {
-        if (this.closed) return resolve(null);
+        if (this.closed || !key.root.isConnected) return finish(null);
         this.plugin.decorateRoot(key.root);
         const candidate = this.siblings(key.root, key.path)[key.ordinal];
         const resolved = candidate ? this.plugin.resolver.resolve(candidate) : null;
@@ -518,12 +548,12 @@ export class EditSession {
           this.container.classList.add('ik-editing');
           this.render();
           this.position();
-          return resolve(candidate);
+          return finish(candidate);
         }
-        if (Date.now() > deadline) return resolve(null);
-        window.setTimeout(attempt, REATTACH_POLL_MS);
+        if (Date.now() > deadline) return finish(null);
+        timer = window.setTimeout(attempt, REATTACH_POLL_MS);
       };
-      window.requestAnimationFrame(attempt);
+      frame = window.requestAnimationFrame(attempt);
     });
   }
 
@@ -563,6 +593,7 @@ export class EditSession {
       this.toolbar.style.removeProperty('bottom');
       this.toolbar.style.removeProperty('max-height');
       this.toolbar.style.setProperty('--ik-viewport-bottom-gap', `${Math.max(0, window.innerHeight - viewportBottom)}px`);
+      this.toolbar.style.setProperty('--ik-layout-height', `${window.innerHeight}px`);
       this.toolbar.style.setProperty('--ik-viewport-height', `${viewport?.height ?? window.innerHeight}px`);
       this.toolbar.style.setProperty('--ik-viewport-top', `${viewportTop}px`);
       return;
@@ -611,6 +642,7 @@ export class EditSession {
     if (e.target instanceof Node && this.resizeGrips?.contains(e.target) && !['Escape', 'Enter'].includes(e.key)) return;
     if (e.isComposing || e.ctrlKey || e.metaKey || e.altKey) return;
     if (e.target === this.widthInput || e.target === this.captionEditor) return;
+    if (e.target instanceof Element && e.target.closest('input, textarea, select, [contenteditable="true"]')) return;
     if (e.key === 'Escape' || e.key === 'Enter') {
       e.preventDefault();
       e.stopPropagation();

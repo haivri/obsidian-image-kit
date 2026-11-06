@@ -64,3 +64,28 @@ test('image controls expose a saved choice between click and hover', async () =>
   assert.equal(plugin.settings.openImageControls, 'hover');
   assert.equal(plugin.saves, 1);
 });
+
+test('malformed persisted settings normalize without sharing mutable defaults', () => {
+  const s = normalizeSettings({ captionIgnore: null, renameTemplate: 42, showCaptions: 'false', handlePaste: 1,
+    captionStyle: 'bad', captionSize: 'constructor', captionBold: 'yes', defaultInsertAlign: null,
+    mobileEditButton: 'bad', defaultInsertSize: 'missing', presets: [{ name: '', width: 0.1 }, { name: 'Custom', width: '42' }, null] });
+  assert.equal(s.captionIgnore, ''); assert.equal(typeof s.renameTemplate, 'string');
+  assert.equal(s.showCaptions, true); assert.equal(s.handlePaste, false);
+  assert.equal(s.captionStyle, 'italic'); assert.equal(s.captionSize, 'default'); assert.equal(s.captionBold, false);
+  assert.deepEqual(s.presets.map(p => p.width), [240, 480, 720]);
+  assert.equal(s.defaultInsertSize, 'Custom');
+  s.presets[0].name = 'Changed';
+  assert.equal(normalizeSettings(null).presets[0].name, 'Small');
+});
+
+test('caption controls persist valid choices and reject invalid types and options', async () => {
+  const { plugin, tab } = fixture();
+  for (const [key, value] of Object.entries({ captionStyle: 'normal', captionBold: true, captionStrikethrough: true, captionSize: 'large' })) {
+    await tab.setControlValue(key, value); assert.equal(plugin.settings[key], value);
+  }
+  const saved = structuredClone(plugin.settings);
+  for (const [key, value] of [['captionStyle', 'constructor'], ['captionSize', 'huge'], ['captionBold', 'true'], ['captionIgnore', null], ['renameTemplate', 7], ['presets', []], ['preset-0-width', true], ['preset-0-name', null]]) {
+    await tab.setControlValue(key, value);
+  }
+  assert.deepEqual(plugin.settings, saved); assert.equal(plugin.saves, 4);
+});

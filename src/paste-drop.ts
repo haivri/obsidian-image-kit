@@ -7,21 +7,30 @@ import { Editor, MarkdownFileInfo, MarkdownView, Notice } from 'obsidian';
 import type ImageKitPlugin from './main';
 import { applyLayout, findImageLinks, isTableRow } from './grammar';
 import { expandTemplate, extensionFor, stemOf } from './naming';
+import { isEditorLocked, isEditorReadOnly, isNoteLocked, sourceFileForEditor } from './lock';
 
 export function registerPasteDrop(plugin: ImageKitPlugin): void {
+  let alive = true;
+  plugin.register(() => { alive = false; });
   plugin.registerEvent(plugin.app.workspace.on('editor-paste', (evt, editor, info) => {
     if (evt.defaultPrevented) return;
     const files = evt.clipboardData?.files ?? null;
-    if (!accepts(plugin, files)) return;
+    if (!accepts(plugin, files) || !info.file || sourceFileForEditor(plugin.app, editor) !== info.file || isEditorReadOnly(editor) || isEditorLocked(plugin.app, editor) || isNoteLocked(plugin.app, info.file.path)) return;
     evt.preventDefault();
-    void handle(plugin, files, editor, info);
+    void handlePasteDrop(plugin, files, editor, info, () => alive).catch(error => {
+      console.error('[image-kit] paste failed', error);
+      new Notice('Image insertion failed. Any saved attachments have been kept.');
+    });
   }));
   plugin.registerEvent(plugin.app.workspace.on('editor-drop', (evt, editor, info) => {
     if (evt.defaultPrevented) return;
     const files = evt.dataTransfer?.files ?? null;
-    if (!accepts(plugin, files)) return;
+    if (!accepts(plugin, files) || !info.file || sourceFileForEditor(plugin.app, editor) !== info.file || isEditorReadOnly(editor) || isEditorLocked(plugin.app, editor) || isNoteLocked(plugin.app, info.file.path)) return;
     evt.preventDefault();
-    void handle(plugin, files, editor, info);
+    void handlePasteDrop(plugin, files, editor, info, () => alive).catch(error => {
+      console.error('[image-kit] paste failed', error);
+      new Notice('Image insertion failed. Any saved attachments have been kept.');
+    });
   }));
 }
 
@@ -31,12 +40,23 @@ function accepts(plugin: ImageKitPlugin, files: FileList | null): files is FileL
   return Array.from(files).every((f) => f.type.startsWith('image/'));
 }
 
-async function handle(plugin: ImageKitPlugin, files: FileList, editor: Editor, info: MarkdownView | MarkdownFileInfo): Promise<void> {
+export async function handlePasteDrop(plugin: ImageKitPlugin, files: FileList, editor: Editor, info: MarkdownView | MarkdownFileInfo, alive: () => boolean): Promise<void> {
   const images = Array.from(files);
   const note = info.file;
-  if (!note) return;
+  if (!note || !alive() || isEditorReadOnly(editor) || isNoteLocked(plugin.app, note.path) || isEditorLocked(plugin.app, editor)) return;
 
   const { app, settings } = plugin;
+  const sourcePath = note.path;
+  const snapshot = editor.getValue();
+  const selections = JSON.stringify(editor.listSelections());
+  const valid = () => alive() && info.file === note && note.path === sourcePath
+    && sourceFileForEditor(app, editor) === note
+    && !isEditorReadOnly(editor) && !isNoteLocked(app, sourcePath) && !isEditorLocked(app, editor)
+    && editor.getValue() === snapshot && JSON.stringify(editor.listSelections()) === selections;
+  const createdPaths: string[] = [];
+  const canceled = () => new Notice(createdPaths.length
+    ? `Image insertion canceled because the destination changed. Attachments kept: ${createdPaths.join(', ')}`
+    : 'Image insertion canceled because the destination changed.');
   const cursor = editor.getCursor();
   const tableRow = isTableRow(editor.getLine(cursor.line));
   const preset = settings.presets.find((p) => p.name === settings.defaultInsertSize);
@@ -44,12 +64,17 @@ async function handle(plugin: ImageKitPlugin, files: FileList, editor: Editor, i
 
   for (const image of images) {
     try {
+      if (!valid()) { canceled(); return; }
       const buffer = await image.arrayBuffer();
+      if (!valid()) { canceled(); return; }
       const original = image.name || 'image';
       const stem = expandTemplate(settings.renameTemplate, { notename: note.basename, original: stemOf(original), now: new Date() });
       const filename = `${stem}.${extensionFor(original, image.type)}`;
       const path = await app.fileManager.getAvailablePathForAttachment(filename, note.path);
+      if (!valid()) { canceled(); return; }
       const created = await app.vault.createBinary(path, buffer);
+      createdPaths.push(created.path);
+      if (!valid()) { canceled(); return; }
       let link = app.fileManager.generateMarkdownLink(created, note.path);
       if (!link.startsWith('!')) link = `!${link}`;
       const parsed = findImageLinks(link, { ...plugin.grammarOptions(), tableRow })[0];
@@ -58,8 +83,15 @@ async function handle(plugin: ImageKitPlugin, files: FileList, editor: Editor, i
         : link);
     } catch (error) {
       console.error('[image-kit] paste failed', error);
-      new Notice(`Could not save ${image.name || 'image'}.`);
+      new Notice(`Could not insert ${image.name || 'image'}.${createdPaths.length ? ` Attachments kept: ${createdPaths.join(', ')}` : ''}`);
     }
   }
-  if (links.length) editor.replaceSelection(links.join('\n'));
+  if (!valid()) { canceled(); return; }
+  if (links.length) {
+    try { editor.replaceSelection(links.join(tableRow ? ' ' : '\n')); }
+    catch (error) {
+      console.error('[image-kit] insertion failed', error);
+      new Notice(`Image insertion failed. Attachments kept: ${createdPaths.join(', ')}`);
+    }
+  }
 }

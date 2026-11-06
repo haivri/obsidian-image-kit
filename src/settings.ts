@@ -12,6 +12,10 @@ export interface ImageKitSettings {
   defaultInsertSize: string;
   defaultInsertAlign: 'left' | 'center';
   showCaptions: boolean;
+  captionStyle: 'normal' | 'italic';
+  captionBold: boolean;
+  captionStrikethrough: boolean;
+  captionSize: 'default' | 'small' | 'medium' | 'large';
   /** Comma-separated alt tokens that are never captions (e.g. CSS-snippet keywords). */
   captionIgnore: string;
   mobileEditButton: 'always' | 'menu';
@@ -29,6 +33,10 @@ export const DEFAULT_SETTINGS: ImageKitSettings = {
   defaultInsertSize: 'Medium',
   defaultInsertAlign: 'left',
   showCaptions: true,
+  captionStyle: 'italic',
+  captionBold: false,
+  captionStrikethrough: false,
+  captionSize: 'default',
   captionIgnore: '',
   mobileEditButton: 'always',
   openImageControls: 'click',
@@ -42,14 +50,28 @@ export function ignoreList(settings: ImageKitSettings): string[] {
 
 /** Merges stored data over defaults, keeping exactly three presets. */
 export function normalizeSettings(stored: Partial<ImageKitSettings> | null): ImageKitSettings {
-  const merged: ImageKitSettings = { ...DEFAULT_SETTINGS, ...(stored ?? {}) };
-  merged.openImageControls = stored?.openImageControls === 'hover' ? 'hover' : 'click';
-  const presets = Array.isArray(merged.presets) ? merged.presets.slice(0, 3) : [];
+  const input = stored && typeof stored === 'object' ? stored : {};
+  const merged: ImageKitSettings = { ...DEFAULT_SETTINGS };
+  for (const key of ['showCaptions', 'handlePaste', 'captionBold', 'captionStrikethrough'] as const) {
+    if (typeof input[key] === 'boolean') merged[key] = input[key];
+  }
+  for (const key of ['captionIgnore', 'renameTemplate'] as const) {
+    if (typeof input[key] === 'string') merged[key] = input[key];
+  }
+  merged.openImageControls = input.openImageControls === 'hover' ? 'hover' : 'click';
+  merged.defaultInsertAlign = input.defaultInsertAlign === 'center' ? 'center' : 'left';
+  merged.mobileEditButton = input.mobileEditButton === 'menu' ? 'menu' : 'always';
+  merged.captionStyle = input.captionStyle === 'normal' ? 'normal' : 'italic';
+  if (input.captionSize && ['default', 'small', 'medium', 'large'].includes(input.captionSize)) merged.captionSize = input.captionSize;
+  const presets = Array.isArray(input.presets) ? input.presets.slice(0, 3) : [];
   while (presets.length < 3) presets.push({ ...DEFAULT_SETTINGS.presets[presets.length] });
   merged.presets = presets.map((p, i) => ({
     name: typeof p?.name === 'string' && p.name.trim() ? p.name.trim() : DEFAULT_SETTINGS.presets[i].name,
-    width: Number.isFinite(p?.width) && p.width > 0 ? Math.round(p.width) : DEFAULT_SETTINGS.presets[i].width
+    width: typeof p?.width === 'number' && Number.isSafeInteger(Math.round(p.width)) && p.width >= 32 ? Math.round(p.width) : DEFAULT_SETTINGS.presets[i].width
   }));
+  const size = input.defaultInsertSize;
+  merged.defaultInsertSize = typeof size === 'string' && (size === 'original' || merged.presets.some(p => p.name === size))
+    ? size : merged.presets[1].name;
   return merged;
 }
 
@@ -73,6 +95,10 @@ export class ImageKitSettingTab extends PluginSettingTab {
       { name: 'Default size on insert', desc: 'Size for the optional paste and drop handler.', aliases: ['size', 'paste'], control: { type: 'dropdown', key: 'defaultInsertSize', defaultValue: DEFAULT_SETTINGS.defaultInsertSize, options: Object.fromEntries<string>([['original', 'Original'] as const, ...this.plugin.settings.presets.map(p => [p.name, p.name] as const)]) } },
       { name: 'Default alignment on insert', desc: 'Alignment for the optional paste and drop handler.', aliases: ['alignment', 'paste'], control: { type: 'dropdown', key: 'defaultInsertAlign', defaultValue: DEFAULT_SETTINGS.defaultInsertAlign, options: { left: 'Left', center: 'Center' } } },
       { name: 'Show captions', desc: 'Render caption text from the image link beneath the image.', aliases: ['figcaption', 'alt'], control: { type: 'toggle', key: 'showCaptions', defaultValue: DEFAULT_SETTINGS.showCaptions } },
+      { name: 'Caption font style', desc: 'Font style for all image captions.', aliases: ['italic', 'normal', 'format'], control: { type: 'dropdown', key: 'captionStyle', defaultValue: DEFAULT_SETTINGS.captionStyle, options: { normal: 'Normal', italic: 'Italic' } } },
+      { name: 'Bold captions', desc: 'Use bold text for all image captions.', aliases: ['font', 'weight'], control: { type: 'toggle', key: 'captionBold', defaultValue: DEFAULT_SETTINGS.captionBold } },
+      { name: 'Strikethrough captions', desc: 'Draw a line through all image captions.', aliases: ['strike', 'format'], control: { type: 'toggle', key: 'captionStrikethrough', defaultValue: DEFAULT_SETTINGS.captionStrikethrough } },
+      { name: 'Caption font size', desc: 'Text size for all image captions. Default preserves the original caption size.', aliases: ['font', 'size'], control: { type: 'dropdown', key: 'captionSize', defaultValue: DEFAULT_SETTINGS.captionSize, options: { default: 'Default', small: 'Small', medium: 'Medium', large: 'Large' } } },
       { name: 'Caption ignore words', desc: 'Comma-separated alt words that are never captions.', aliases: ['thumb', 'keywords'], control: { type: 'text', key: 'captionIgnore', defaultValue: DEFAULT_SETTINGS.captionIgnore } },
       { name: 'Open image controls', desc: 'Desktop only. Hover opens after 350 ms; hover- or click-opened controls close 700 ms after leaving the image and controls. Active edits stay open.', aliases: ['hover', 'click', 'desktop'], control: { type: 'dropdown', key: 'openImageControls', defaultValue: DEFAULT_SETTINGS.openImageControls, options: { click: 'Click only', hover: 'Hover or click' } } },
       { name: 'Edit button on mobile', desc: 'Include the image edit action on touch devices, or use commands and the context menu.', aliases: ['mobile', 'touch'], control: { type: 'dropdown', key: 'mobileEditButton', defaultValue: DEFAULT_SETTINGS.mobileEditButton, options: { always: 'Always', menu: 'Context menu only' } } },
@@ -92,20 +118,26 @@ export class ImageKitSettingTab extends PluginSettingTab {
     if (match) {
       const preset = this.plugin.settings.presets[Number(match[1])];
       if (match[2] === 'name') {
-        const next = String(value).trim();
+        if (typeof value !== 'string') return;
+        const next = value.trim();
         if (!next) return;
         if (this.plugin.settings.defaultInsertSize === preset.name) this.plugin.settings.defaultInsertSize = next;
         preset.name = next;
       } else {
+        if (typeof value !== 'number' && typeof value !== 'string') return;
         const width = Math.round(Number(value));
-        if (!Number.isFinite(width) || width < 32) return;
+        if (!Number.isSafeInteger(width) || width < 32) return;
         preset.width = width;
       }
       await this.plugin.saveSettings();
       return;
     }
     const settings = this.plugin.settings as unknown as Record<string, unknown>;
-    if (!(key in settings)) return;
+    const control = this.getSettingDefinitions().find(d => d.control.key === key)?.control;
+    if (!control) return;
+    if (control.type === 'toggle' && typeof value !== 'boolean') return;
+    if (control.type === 'text' && typeof value !== 'string') return;
+    if (control.type === 'dropdown' && (typeof value !== 'string' || !Object.prototype.hasOwnProperty.call(control.options, value))) return;
     settings[key] = value;
     await this.plugin.saveSettings();
     this.plugin.redecorateAll();

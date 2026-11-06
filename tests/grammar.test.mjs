@@ -154,3 +154,11 @@ test('helpers: isImagePath, basenameOf, normalizePath', () => {
 function pick(l) {
   return { path: l.path, width: l.width, height: l.height, align: l.align, caption: l.caption, free: l.free };
 }
+
+test('object prototype names remain plain caption text', () => {
+  for (const caption of ['constructor', '__proto__', 'toString', 'hasOwnProperty']) {
+    const link = g.findImageLinks(`![[a.png|${caption}]]`)[0];
+    assert.equal(link.caption, caption); assert.equal(link.align, undefined);
+    assert.equal(g.findImageLinks(g.applyLayout(link, { width: 100 }))[0].caption, caption);
+  }
+});

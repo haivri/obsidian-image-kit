@@ -1,6 +1,14 @@
 # Changelog
 
-## Unreleased
+## 0.1.14
+
+- Add global Normal/Italic, Bold, Strikethrough, and caption font-size settings while preserving the existing appearance by default (#1, #2).
+- Keep mobile image controls and caption editing above native navigation and keyboard insets without counting overlapping signals twice (#2).
+- Validate stored settings and preserve literal captions such as `constructor`.
+- Guard stale and ambiguous image writes, resolve the owning editor pane, and accurately detect rejected image deletions.
+- Cancel delayed paste/drop insertion when its destination changes, retaining original attachments; keep multiple pasted images inside a table cell.
+- Clean up caption listeners and reattachment timers; protect composition input, unrelated text fields, and canceled width edits.
+- Add isolated browser layout regression checks to validation and release workflows; update vulnerable development dependencies within compatible ranges.
 
 - Wait 350 ms before opening controls on mouse hover to avoid accidental flybys; clicking still opens immediately.
 - In Hover or click mode, dismiss both hover- and click-opened controls 700 ms after leaving their actual bounds and short connecting gaps. Empty surrounding space and ordinary clicks no longer keep them open.

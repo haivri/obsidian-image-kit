@@ -155,7 +155,7 @@ function classify(tokens: string[], dest: string, form: LinkForm, options: Gramm
       height = size[2] === undefined ? undefined : Number(size[2]);
       continue;
     }
-    const aliased = ALIGN_ALIASES[lower];
+    const aliased = Object.prototype.hasOwnProperty.call(ALIGN_ALIASES, lower) ? ALIGN_ALIASES[lower] : undefined;
     if (aliased !== undefined) {
       align = aliased === 'left' ? undefined : aliased;
       continue;

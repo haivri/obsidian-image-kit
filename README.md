@@ -14,6 +14,7 @@ on desktop and mobile.
 - On mobile, drag either diagonal corner grip to preview a new size; tap Done or outside the image to save.
 - Align left, center, or right, and wrap text around an image.
 - Add and edit a plain-text caption without editing the link syntax.
+- Choose Normal or Italic captions, combine Bold and Strikethrough, and adjust caption text size in settings.
 - Reveal the attachment in the file explorer, copy it, or open it fullscreen.
 - Reset size and alignment while keeping the caption.
 - Remove an image from the note while keeping its attachment.
@@ -56,6 +57,8 @@ when enabled, or to Obsidian otherwise. Simple Gallery owns gallery editing.
 
 **Open image controls** in settings defaults to **Click only**. Choose **Hover or click** for desktop mouse access: resting over **Edit image** for 350 ms opens the controls; clicking opens them immediately. In this mode, either opening method closes 700 ms after leaving the image, caption, native action strip, toolbar, and short connecting gaps. Returning cancels closing; a new exit starts a fresh delay. Empty space beside these elements does not keep controls open. Outside clicks still close immediately. Caption and width entry, pending changes, and the More menu stay open while you use them; hover dismissal resumes afterward. Escape or an outside click closes the controls. Desktop hover mode hides Done; click-only mode and mobile keep it. Opening settings closes image controls, and hover stays inactive while a modal is open. Mobile remains tap-only.
 
+**Caption appearance** in Settings → Image Kit applies to all image captions in Live Preview and Reading view. Choose **Caption font style** (Normal or Italic), **Bold captions**, **Strikethrough captions**, and **Caption font size** (Default, Small, Medium, Large). Italic and Default preserve the existing appearance. These preferences do not rewrite your notes.
+
 **More actions** includes file shortcuts, fullscreen viewing, Reset, and Remove image from note.
 Reading view keeps captions and alignment visible, with image editing controls hidden.
 
@@ -80,7 +83,7 @@ Layout is saved in the image link:
 There is no separate layout database. Obsidian can still apply the width if Image Kit is
 removed; visible captions and alignment need a compatible plugin or renderer.
 The optional paste/drop handler keeps the original image bytes and is off by default,
-so your existing attachment workflow can continue.
+so your existing attachment workflow can continue. If the note, selection, or lock state changes while an attachment is being saved, insertion is canceled and any saved files are kept; a notice lists their paths.
 
 Image Kit makes no telemetry requests. Remote image links follow Obsidian’s normal behavior.
 It does not convert, compress, crop, rotate, or annotate images.

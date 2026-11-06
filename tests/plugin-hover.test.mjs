@@ -137,3 +137,62 @@ test('click-only controls retain their explicit dismissal behavior', t => {
   assert.equal(f.plugin.session.hoverDismiss, null);
   f.tick(1000); assert.equal(f.plugin.session.closed, false);
 });
+
+test('inline captions ignore IME Enter and detach listeners between editing sessions', t => {
+  const f = fixture(t); f.plugin.openSession(f.container);
+  const s = f.plugin.session;
+  s.resolved.link.caption = 'Original';
+  let saves = 0;
+  t.mock.method(s, 'apply', async () => { saves++; });
+  for (let i = 0; i < 3; i++) {
+    s.editCaption(); const editor = s.captionEditor;
+    editor.textContent = `Draft ${i}`;
+    editor.dispatchEvent(new f.window.KeyboardEvent('keydown', { key: 'Enter', isComposing: true }));
+    assert.equal(s.captionEditor, editor); assert.equal(saves, i);
+    editor.dispatchEvent(new f.window.KeyboardEvent('keydown', { key: 'Enter' }));
+    assert.equal(s.captionEditor, null); assert.equal(s.captionCleanup, null); assert.equal(saves, i + 1);
+    editor.dispatchEvent(new f.window.Event('blur'));
+    assert.equal(saves, i + 1);
+  }
+});
+
+test('global image shortcuts leave unrelated editable controls alone', t => {
+  const f = fixture(t); f.plugin.openSession(f.container);
+  const s = f.plugin.session;
+  let changes = 0;
+  t.mock.method(s, 'nudge', () => { changes++; });
+  const input = f.window.document.createElement('input'); f.window.document.body.append(input);
+  input.dispatchEvent(new f.window.KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+  assert.equal(changes, 0); assert.equal(s.closed, false);
+});
+
+test('Escape in the width field cancels pending edits', t => {
+  const f = fixture(t); f.plugin.openSession(f.container);
+  const s = f.plugin.session;
+  let savePending;
+  t.mock.method(s, 'close', save => { savePending = save; });
+  s.widthInput.dispatchEvent(new f.window.KeyboardEvent('keydown', { key: 'Escape' }));
+  assert.equal(savePending, false);
+});
+
+test('closing a session cancels and settles pending reattachment', async t => {
+  const f = fixture(t); f.plugin.openSession(f.container);
+  const s = f.plugin.session;
+  const frames = new Map(); let id = 0;
+  f.window.requestAnimationFrame = callback => { frames.set(++id, callback); return id; };
+  f.window.cancelAnimationFrame = frame => frames.delete(frame);
+  const result = s.reattach(s.keyOf(f.container));
+  assert.equal(frames.size, 1);
+  s.close(false);
+  assert.equal(await result, null); assert.equal(frames.size, 0); assert.equal(s.cancelReattach, null);
+});
+
+test('failed source writes close cleanly without an unhandled rejection', async t => {
+  const f = fixture(t); f.plugin.openSession(f.container);
+  const s = f.plugin.session;
+  t.mock.method(console, 'error', () => {});
+  s.resolved.from = 0; s.resolved.to = s.link.raw.length;
+  s.resolved.view = { state: { doc: { sliceString: () => s.link.raw } }, dispatch() { throw Error('Write failed'); } };
+  await s.commit('![[photo.jpg|100]]');
+  assert.equal(s.closed, true); assert.equal(s.busy, false); assert.equal(f.plugin.session, null);
+});

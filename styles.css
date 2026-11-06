@@ -52,8 +52,10 @@
   min-width: 100%;
   margin-top: 0.35em;
   text-align: center;
-  font-size: var(--font-smaller);
-  font-style: italic;
+  font-size: var(--ik-caption-size, var(--font-smaller));
+  font-style: var(--ik-caption-style, italic);
+  font-weight: var(--ik-caption-weight, normal);
+  text-decoration: var(--ik-caption-decoration, none);
   line-height: 1.35;
   color: var(--text-muted);
   overflow-wrap: anywhere;
@@ -226,17 +228,19 @@ body.is-mobile .ik-edit-native { min-width: 44px; min-height: 44px; }
 }
 
 .ik-toolbar.ik-toolbar-mobile {
+  --ik-bottom-obstruction: max(0px, var(--safe-area-inset-bottom, 0px), env(safe-area-inset-bottom, 0px), var(--keyboard-height, 0px), var(--ik-viewport-bottom-gap, 0px));
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
   top: auto;
-  bottom: max(var(--keyboard-height, 0px), var(--ik-viewport-bottom-gap, 0px));
-  max-height: max(0px, calc(min(var(--ik-viewport-height, 100dvh), calc(100vh - var(--keyboard-height, 0px) - var(--ik-viewport-top, 0px))) - 16px));
+  bottom: var(--ik-bottom-obstruction);
+  box-sizing: border-box;
+  max-height: max(0px, calc(var(--ik-layout-height, 100dvh) - var(--ik-bottom-obstruction) - var(--ik-viewport-top, 0px) - 16px));
   left: 50%;
   transform: translateX(-50%);
   width: min(100%, 560px);
   max-width: 100%;
-  padding: 12px 12px calc(12px + env(safe-area-inset-bottom, 0px));
+  padding: 12px;
   border-radius: var(--radius-l) var(--radius-l) 0 0;
   overflow-y: auto;
   overscroll-behavior: contain;

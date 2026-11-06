@@ -21,6 +21,8 @@ export interface ResolvedLink {
   from?: number;
   to?: number;
   view?: EditorView;
+  /** Live editor ownership can change while an asynchronous action is pending. */
+  isCurrent?: () => boolean;
 }
 
 interface ReadingContext {
@@ -69,7 +71,7 @@ export function pickLinkOnLine(lineText: string, offset: number | null, embedPat
     if (byPath.length > 1 && offset !== null) {
       return byPath.reduce((best, l) => (Math.abs(l.start - offset) < Math.abs(best.start - offset) ? l : best));
     }
-    if (byPath.length > 1) return byPath[0];
+    if (byPath.length > 1) return null;
   }
   return links.length === 1 ? links[0] : null;
 }
@@ -109,9 +111,19 @@ export class Resolver {
     const line = view.state.doc.lineAt(pos);
     const link = pickLinkOnLine(line.text, pos - line.from, embedPathOf(container), this.options());
     if (!link) return null;
-    const info = this.app.workspace.activeEditor;
-    const sourcePath = info?.file?.path ?? this.app.workspace.getActiveFile()?.path ?? '';
-    return { link, sourcePath, line: line.number - 1, from: line.from + link.start, to: line.from + link.end, view };
+    let sourcePath = '';
+    let isCurrent: (() => boolean) | undefined;
+    this.app.workspace.iterateAllLeaves(leaf => {
+      const owner = leaf.view as typeof leaf.view & { file?: TFile; editor?: { cm?: EditorView } };
+      if (owner.editor?.cm === view && owner.containerEl.contains(container) && owner.file) {
+        const file = owner.file;
+        const path = file.path;
+        sourcePath = path;
+        isCurrent = () => owner.editor?.cm === view && owner.file === file && file.path === path;
+      }
+    });
+    if (!sourcePath) return null;
+    return { link, sourcePath, line: line.number - 1, from: line.from + link.start, to: line.from + link.end, view, isCurrent };
   }
 
   private resolveReading(container: HTMLElement): ResolvedLink | null {

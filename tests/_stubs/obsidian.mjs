@@ -1,7 +1,7 @@
 // Minimal stand-ins so pure modules that import types (and a few runtime
 // symbols) from 'obsidian' can be bundled for node --test.
 export class TFile {}
-export class Notice { constructor(message) { this.message = message; } }
+export class Notice { static messages = []; constructor(message) { this.message = message; Notice.messages.push(message); } }
 export class Plugin {}
 export class MarkdownView {}
 export class PluginSettingTab {}

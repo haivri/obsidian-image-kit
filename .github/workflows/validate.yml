@@ -30,5 +30,11 @@ jobs:
       - name: Test
         run: npm test
 
+      - name: Install test browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser regression tests
+        run: npm run test:browser
+
       - name: Verify release files
         run: test -s main.js && test -s manifest.json && test -s styles.css
