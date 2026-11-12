@@ -49,6 +49,20 @@ export function decorate(container: HTMLElement, options: DecorateOptions): void
   const form = container.hasAttribute('src') ? 'wiki' : 'md';
   const layout = parseAltSegment(alt, path, form, options.grammar);
   const caption = options.showCaptions ? layout.caption : undefined;
+  // A ratio-only SVG cannot supply a width to an inline-block/fit-content
+  // parent. Give Reading view's shrink-to-fit embed a definite basis instead.
+  // Recompute before the decoration fast path: image load does not change alt.
+  const autoSvg = container !== img && viewModeOf(container) === 'reading'
+    && /\.svg(?:[?#]|$)/i.test(path) && !layout.width
+    && !img.hasAttribute('width') && !img.hasAttribute('height');
+  container.classList.toggle('ik-svg-auto', autoSvg);
+  if (autoSvg) {
+    const width = `${img.naturalWidth || 300}px`;
+    if (container.style.getPropertyValue('--ik-svg-width') !== width) container.style.setProperty('--ik-svg-width', width);
+  } else {
+    container.style.removeProperty('--ik-svg-width');
+  }
+
   const captionEl = container.querySelector(':scope > .ik-caption');
   const captionMatches = captionEl?.classList.contains('ik-caption-editing') || (caption ? captionEl?.textContent === caption : !captionEl);
   const editMatches = Boolean(container.querySelector('.ik-edit-btn')) === (editable && options.showEditButton);

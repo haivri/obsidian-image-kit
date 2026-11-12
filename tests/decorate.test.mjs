@@ -117,7 +117,16 @@ test('reading view decorates late-loaded images, repairs native replacements, an
   assert.equal(embed.querySelector('.ik-caption').textContent, 'A caption');
   await flush(); await flush();
   assert.equal(frames.size, 0, 'decoration must settle without an observer loop');
+  embed.querySelector('img').dispatchEvent(new window.Event('load'));
+  assert.equal(frames.size, 1, 'non-bubbling image loads schedule decoration');
+  await flush();
+  embed.querySelector('img').setAttribute('height', '160');
+  await Promise.resolve();
+  assert.equal(frames.size, 1, 'native height changes schedule decoration');
   child.unload();
+  assert.equal(frames.size, 0, 'unload cancels pending decoration');
+  embed.querySelector('img').dispatchEvent(new window.Event('load'));
+  assert.equal(frames.size, 0, 'unload removes the capturing load listener');
   embed.setAttribute('alt', 'Changed|right|240');
   await flush();
   assert.equal(embed.querySelector('.ik-caption').textContent, 'A caption');
@@ -172,5 +181,42 @@ test('caption appearance updates without replacing an active draft or native con
   assert.equal(embed.style.getPropertyValue('--ik-caption-style'), 'normal');
   assert.equal(embed.style.getPropertyValue('--ik-caption-weight'), 'var(--font-bold, 700)');
   assert.equal(embed.style.getPropertyValue('--ik-caption-decoration'), 'line-through');
+  root.remove();
+});
+
+test('Reading SVG auto width survives loading and clears for native sizing, raster images, and Live Preview', () => {
+  const root = window.document.createElement('div');
+  root.className = 'markdown-reading-view';
+  root.innerHTML = '<span class="image-embed" src="diagram.svg" alt="Odd Quarter-Wave Symmetry"><img></span>';
+  window.document.body.append(root);
+  const embed = root.firstElementChild;
+  const img = embed.querySelector('img');
+  decorate(embed, options);
+  assert.ok(embed.classList.contains('ik-svg-auto'));
+  assert.equal(embed.style.getPropertyValue('--ik-svg-width'), '300px');
+  Object.defineProperty(img, 'naturalWidth', { value: 640, configurable: true });
+  decorate(embed, options); // Same decoration key, image has now loaded.
+  assert.equal(embed.style.getPropertyValue('--ik-svg-width'), '640px');
+  for (const attribute of ['width', 'height']) {
+    img.setAttribute(attribute, '200');
+    decorate(embed, options);
+    assert.equal(embed.classList.contains('ik-svg-auto'), false);
+    assert.equal(embed.style.getPropertyValue('--ik-svg-width'), '');
+    img.removeAttribute(attribute);
+  }
+  embed.setAttribute('alt', 'Caption|200');
+  decorate(embed, options);
+  assert.equal(embed.classList.contains('ik-svg-auto'), false);
+  embed.setAttribute('alt', 'Caption');
+  embed.setAttribute('src', 'diagram.png');
+  decorate(embed, options);
+  assert.equal(embed.classList.contains('ik-svg-auto'), false);
+  embed.setAttribute('src', 'diagram.SVG?version=2');
+  decorate(embed, options);
+  assert.equal(embed.style.getPropertyValue('--ik-svg-width'), '640px');
+  root.className = 'markdown-source-view';
+  decorate(embed, options);
+  assert.equal(embed.classList.contains('ik-svg-auto'), false);
+  assert.equal(embed.style.getPropertyValue('--ik-svg-width'), '');
   root.remove();
 });

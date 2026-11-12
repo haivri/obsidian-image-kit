@@ -44,6 +44,12 @@
   margin: 0.2em 0 0.5em 1em;
 }
 
+/* SVGs with only a viewBox have an aspect ratio, but no intrinsic CSS width.
+   Resolve their embed width before the image's percentage max-width/caption. */
+.ik-embed.ik-svg-auto {
+  width: var(--ik-svg-width, 300px);
+}
+
 /* ---- captions ------------------------------------------------------------ */
 
 .ik-caption {

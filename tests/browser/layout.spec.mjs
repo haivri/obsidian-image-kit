@@ -138,3 +138,50 @@ test('all caption formats render in both view modes and preserve an active draft
   await expect(page.locator('.ik-caption')).toHaveText('Unsaved draft');
   await expect(page.locator('.ik-caption')).toBeFocused();
 });
+
+// Unlike the toolbar fixtures above, these images have real decoded content and
+// no fixed CSS width. This exercises the intrinsic sizing cycle in issue #3.
+for (const align of ['', 'center', 'right', 'wrap-left', 'wrap-right']) {
+  for (const dimensions of ['', 'width="600" height="300"']) {
+    test(`Reading SVG without link width: ${align || 'default'}, ${dimensions ? 'intrinsic dimensions' : 'viewBox only'}`, async ({ page }) => {
+      await setup(page, 800, 700);
+      await page.evaluate(() => session.close(false));
+      await page.addStyleTag({ content: '.image-embed img { width: auto; height: auto; max-width: 100%; }' });
+      await page.evaluate(({ align, dimensions }) => {
+        const root = document.querySelector('.workspace-leaf-content');
+        root.className = 'workspace-leaf-content markdown-reading-view';
+        root.innerHTML = '<span class="image-embed" src="diagram.svg"><img></span>';
+        window.embed = root.firstElementChild;
+        embed.setAttribute('alt', `Odd Quarter-Wave Symmetry${align ? `|${align}` : ''}`);
+        const img = embed.querySelector('img');
+        img.src = `data:image/svg+xml,${encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 300" ${dimensions}><rect width="600" height="300" fill="teal"/></svg>`)}`;
+        ImageKitTest.decorate(embed, options);
+      }, { align, dimensions });
+      await page.locator('.image-embed img').evaluate(async img => { await img.decode(); ImageKitTest.decorate(embed, options); });
+      for (const width of [800, 320, 800]) {
+        await page.setViewportSize({ width, height: 700 });
+        const limit = (width - 32) * (align.startsWith('wrap') ? 0.5 : 1);
+        const expected = Math.min(dimensions ? 600 : 300, limit);
+        const img = await page.locator('.image-embed img').boundingBox();
+        const cap = await page.locator('.ik-caption').boundingBox();
+        expect(img.width).toBeCloseTo(expected, 0);
+        expect(img.height).toBeCloseTo(expected / 2, 0);
+        expect(cap.width).toBeCloseTo(img.width, 0);
+        expect(cap.y).toBeGreaterThanOrEqual(img.y + img.height);
+        expect(cap.height).toBeLessThan(100);
+      }
+      // Explicit width and reset must not retain the automatic SVG basis.
+      await page.evaluate(() => {
+        embed.setAttribute('alt', 'Caption|200');
+        embed.querySelector('img').setAttribute('width', '200');
+        ImageKitTest.decorate(embed, options);
+      });
+      await expect(page.locator('.image-embed')).not.toHaveClass(/ik-svg-auto/);
+      await page.evaluate(() => {
+        embed.setAttribute('alt', 'Caption'); embed.querySelector('img').removeAttribute('width');
+        ImageKitTest.decorate(embed, options);
+      });
+      await expect(page.locator('.image-embed')).toHaveClass(/ik-svg-auto/);
+    });
+  }
+}

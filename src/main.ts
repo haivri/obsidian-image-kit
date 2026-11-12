@@ -51,8 +51,9 @@ export default class ImageKitPlugin extends Plugin {
     document.querySelectorAll('.ik-caption, .ik-edit-btn').forEach((el) => el.remove());
     document.querySelectorAll('[data-ik]').forEach((el) => {
       el.removeAttribute('data-ik');
-      el.classList.remove('ik-embed', 'ik-has-caption', 'ik-editing', 'ik-align-center', 'ik-align-right', 'ik-align-wrap-left', 'ik-align-wrap-right');
+      el.classList.remove('ik-embed', 'ik-svg-auto', 'ik-has-caption', 'ik-editing', 'ik-align-center', 'ik-align-right', 'ik-align-wrap-left', 'ik-align-wrap-right');
       if (el.instanceOf(HTMLElement)) {
+        el.style.removeProperty('--ik-svg-width');
         for (const name of ['style', 'weight', 'decoration', 'size']) el.style.removeProperty(`--ik-caption-${name}`);
       }
     });
