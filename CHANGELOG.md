@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.15 - 2026-11-12
+
+- Fix SVG images and captions collapsing in Reading mode when no explicit image width is set (#3).
+- Preserve explicit native image sizing and Live Preview behavior, and update Reading mode decoration after images load.
+- Add automated browser coverage for viewBox-only and intrinsically sized SVGs across all five alignments, plus unit coverage for image-load redecoration and cleanup.
+
 ## 0.1.14
 
 - Add global Normal/Italic, Bold, Strikethrough, and caption font-size settings while preserving the existing appearance by default (#1, #2).
